@@ -1,0 +1,40 @@
+.launch-container {
+    height: 100vh;
+    background: linear-gradient(135deg, #1e043d, #130524);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  
+  .launch-box {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 50px;
+    border-radius: 20px;
+    box-shadow: 0 0 15px #00000055;
+  }
+  
+  .launch-box h1 {
+    background: linear-gradient(to right, #ff0080, #7928ca);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 30px;
+  }
+  
+  .launch-box button {
+    padding: 15px 30px;
+    background: #4e44ce;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background 0.3s ease;
+  }
+  
+  .launch-box button:hover {
+    background: #6c63ff;
+  }
+  
