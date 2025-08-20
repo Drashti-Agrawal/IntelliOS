@@ -1,0 +1,301 @@
+2025-08-21 00:28:57,616 [INFO] Logging initialized at MINIMAL level
+2025-08-21 00:28:57,617 [INFO] ================================================================================
+2025-08-21 00:28:57,617 [INFO] IntelliOS Log Processing System
+2025-08-21 00:28:57,618 [INFO] ================================================================================
+2025-08-21 00:28:57,618 [INFO] Logging level: MINIMAL
+2025-08-21 00:28:57,618 [INFO] Starting log processing for channel 'System' since 2025-08-20 14:58:57.618548+00:00
+2025-08-21 00:28:57,618 [INFO] Opening event log channel: 'System'
+2025-08-21 00:28:57,634 [INFO] Attempting regex parsing for provider: 'Service Control Manager'
+2025-08-21 00:28:57,641 [INFO] Successfully parsed log from 'Service Control Manager' with regex.
+2025-08-21 00:28:57,641 [INFO] Attempting regex parsing for provider: 'Service Control Manager'
+2025-08-21 00:28:57,642 [INFO] Successfully parsed log from 'Service Control Manager' with regex.
+2025-08-21 00:28:57,642 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,642 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,642 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,643 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,643 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-WindowsUpdateClient'
+2025-08-21 00:28:57,643 [INFO] No regex match found for provider 'Microsoft-Windows-WindowsUpdateClient'.
+2025-08-21 00:28:57,643 [INFO] Regex failed for provider 'Microsoft-Windows-WindowsUpdateClient'. Trying LLM...
+2025-08-21 00:28:57,643 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,644 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-WindowsUpdateClient'
+2025-08-21 00:28:57,644 [INFO] No regex match found for provider 'Microsoft-Windows-WindowsUpdateClient'.
+2025-08-21 00:28:57,644 [INFO] Regex failed for provider 'Microsoft-Windows-WindowsUpdateClient'. Trying LLM...
+2025-08-21 00:28:57,644 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,644 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-WindowsUpdateClient'
+2025-08-21 00:28:57,644 [INFO] No regex match found for provider 'Microsoft-Windows-WindowsUpdateClient'.
+2025-08-21 00:28:57,644 [INFO] Regex failed for provider 'Microsoft-Windows-WindowsUpdateClient'. Trying LLM...
+2025-08-21 00:28:57,645 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,645 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,645 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,645 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,646 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,646 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Time-Service'
+2025-08-21 00:28:57,646 [INFO] No regex match found for provider 'Microsoft-Windows-Time-Service'.
+2025-08-21 00:28:57,646 [INFO] Regex failed for provider 'Microsoft-Windows-Time-Service'. Trying LLM...
+2025-08-21 00:28:57,646 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,646 [INFO] Attempting regex parsing for provider: 'TPM'
+2025-08-21 00:28:57,647 [INFO] Successfully parsed log from 'TPM' with regex.
+2025-08-21 00:28:57,647 [INFO] Attempting regex parsing for provider: 'TPM'
+2025-08-21 00:28:57,647 [INFO] Successfully parsed log from 'TPM' with regex.
+2025-08-21 00:28:57,648 [INFO] Attempting regex parsing for provider: 'TPM'
+2025-08-21 00:28:57,648 [INFO] Successfully parsed log from 'TPM' with regex.
+2025-08-21 00:28:57,648 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-IsolatedUserMode'
+2025-08-21 00:28:57,648 [INFO] Successfully parsed log from 'Microsoft-Windows-IsolatedUserMode' with regex.
+2025-08-21 00:28:57,648 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-IsolatedUserMode'
+2025-08-21 00:28:57,648 [INFO] Successfully parsed log from 'Microsoft-Windows-IsolatedUserMode' with regex.
+2025-08-21 00:28:57,649 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Time-Service'
+2025-08-21 00:28:57,649 [INFO] No regex match found for provider 'Microsoft-Windows-Time-Service'.
+2025-08-21 00:28:57,649 [INFO] Regex failed for provider 'Microsoft-Windows-Time-Service'. Trying LLM...
+2025-08-21 00:28:57,649 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,649 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Time-Service'
+2025-08-21 00:28:57,650 [INFO] No regex match found for provider 'Microsoft-Windows-Time-Service'.
+2025-08-21 00:28:57,650 [INFO] Regex failed for provider 'Microsoft-Windows-Time-Service'. Trying LLM...
+2025-08-21 00:28:57,650 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,650 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Processor-Power'
+2025-08-21 00:28:57,650 [INFO] No regex match found for provider 'Microsoft-Windows-Kernel-Processor-Power'.
+2025-08-21 00:28:57,650 [INFO] Regex failed for provider 'Microsoft-Windows-Kernel-Processor-Power'. Trying LLM...
+2025-08-21 00:28:57,651 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,651 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Processor-Power'
+2025-08-21 00:28:57,652 [INFO] No regex match found for provider 'Microsoft-Windows-Kernel-Processor-Power'.
+2025-08-21 00:28:57,652 [INFO] Regex failed for provider 'Microsoft-Windows-Kernel-Processor-Power'. Trying LLM...
+2025-08-21 00:28:57,652 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,652 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Time-Service'
+2025-08-21 00:28:57,652 [INFO] No regex match found for provider 'Microsoft-Windows-Time-Service'.
+2025-08-21 00:28:57,653 [INFO] Regex failed for provider 'Microsoft-Windows-Time-Service'. Trying LLM...
+2025-08-21 00:28:57,653 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,653 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,653 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,653 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,654 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,654 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-WindowsUpdateClient'
+2025-08-21 00:28:57,654 [INFO] No regex match found for provider 'Microsoft-Windows-WindowsUpdateClient'.
+2025-08-21 00:28:57,654 [INFO] Regex failed for provider 'Microsoft-Windows-WindowsUpdateClient'. Trying LLM...
+2025-08-21 00:28:57,654 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,655 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-General'
+2025-08-21 00:28:57,655 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-General' with regex.
+2025-08-21 00:28:57,655 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-WindowsUpdateClient'
+2025-08-21 00:28:57,655 [INFO] No regex match found for provider 'Microsoft-Windows-WindowsUpdateClient'.
+2025-08-21 00:28:57,655 [INFO] Regex failed for provider 'Microsoft-Windows-WindowsUpdateClient'. Trying LLM...
+2025-08-21 00:28:57,655 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,656 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-General'
+2025-08-21 00:28:57,656 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-General' with regex.
+2025-08-21 00:28:57,657 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,657 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,657 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,657 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,658 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-WindowsUpdateClient'
+2025-08-21 00:28:57,658 [INFO] No regex match found for provider 'Microsoft-Windows-WindowsUpdateClient'.
+2025-08-21 00:28:57,658 [INFO] Regex failed for provider 'Microsoft-Windows-WindowsUpdateClient'. Trying LLM...
+2025-08-21 00:28:57,658 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,658 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Time-Service'
+2025-08-21 00:28:57,659 [INFO] No regex match found for provider 'Microsoft-Windows-Time-Service'.
+2025-08-21 00:28:57,659 [INFO] Regex failed for provider 'Microsoft-Windows-Time-Service'. Trying LLM...
+2025-08-21 00:28:57,659 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,659 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Time-Service'
+2025-08-21 00:28:57,659 [INFO] No regex match found for provider 'Microsoft-Windows-Time-Service'.
+2025-08-21 00:28:57,660 [INFO] Regex failed for provider 'Microsoft-Windows-Time-Service'. Trying LLM...
+2025-08-21 00:28:57,660 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,660 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-DNS-Client'
+2025-08-21 00:28:57,660 [INFO] No regex match found for provider 'Microsoft-Windows-DNS-Client'.
+2025-08-21 00:28:57,660 [INFO] Regex failed for provider 'Microsoft-Windows-DNS-Client'. Trying LLM...
+2025-08-21 00:28:57,660 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,661 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-General'
+2025-08-21 00:28:57,661 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-General' with regex.
+2025-08-21 00:28:57,661 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Power-Troubleshooter'
+2025-08-21 00:28:57,661 [INFO] No regex match found for provider 'Microsoft-Windows-Power-Troubleshooter'.
+2025-08-21 00:28:57,661 [INFO] Regex failed for provider 'Microsoft-Windows-Power-Troubleshooter'. Trying LLM...
+2025-08-21 00:28:57,662 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,662 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-General'
+2025-08-21 00:28:57,662 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-General' with regex.
+2025-08-21 00:28:57,662 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,663 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,663 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,663 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,663 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,663 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,663 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,664 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,664 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,664 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,664 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Boot'
+2025-08-21 00:28:57,664 [INFO] No regex match found for provider 'Microsoft-Windows-Kernel-Boot'.
+2025-08-21 00:28:57,664 [INFO] Regex failed for provider 'Microsoft-Windows-Kernel-Boot'. Trying LLM...
+2025-08-21 00:28:57,664 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,664 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Boot'
+2025-08-21 00:28:57,665 [INFO] No regex match found for provider 'Microsoft-Windows-Kernel-Boot'.
+2025-08-21 00:28:57,665 [INFO] Regex failed for provider 'Microsoft-Windows-Kernel-Boot'. Trying LLM...
+2025-08-21 00:28:57,665 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,665 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Boot'
+2025-08-21 00:28:57,665 [INFO] No regex match found for provider 'Microsoft-Windows-Kernel-Boot'.
+2025-08-21 00:28:57,665 [INFO] Regex failed for provider 'Microsoft-Windows-Kernel-Boot'. Trying LLM...
+2025-08-21 00:28:57,665 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,665 [INFO] Attempting regex parsing for provider: 'Win32k'
+2025-08-21 00:28:57,665 [INFO] Successfully parsed log from 'Win32k' with regex.
+2025-08-21 00:28:57,666 [INFO] Attempting regex parsing for provider: 'Win32k'
+2025-08-21 00:28:57,666 [INFO] Successfully parsed log from 'Win32k' with regex.
+2025-08-21 00:28:57,666 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-General'
+2025-08-21 00:28:57,666 [INFO] No regex match found for provider 'Microsoft-Windows-Kernel-General'.
+2025-08-21 00:28:57,667 [INFO] Regex failed for provider 'Microsoft-Windows-Kernel-General'. Trying LLM...
+2025-08-21 00:28:57,667 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,668 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,669 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,669 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,669 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,669 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,669 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,670 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,670 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,670 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,670 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,670 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,671 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,671 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,671 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,671 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,671 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,672 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,672 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,672 [INFO] Attempting regex parsing for provider: 'Win32k'
+2025-08-21 00:28:57,673 [INFO] Successfully parsed log from 'Win32k' with regex.
+2025-08-21 00:28:57,673 [INFO] Attempting regex parsing for provider: 'Win32k'
+2025-08-21 00:28:57,673 [INFO] Successfully parsed log from 'Win32k' with regex.
+2025-08-21 00:28:57,674 [INFO] Attempting regex parsing for provider: 'TPM'
+2025-08-21 00:28:57,674 [INFO] Successfully parsed log from 'TPM' with regex.
+2025-08-21 00:28:57,674 [INFO] Attempting regex parsing for provider: 'TPM'
+2025-08-21 00:28:57,674 [INFO] Successfully parsed log from 'TPM' with regex.
+2025-08-21 00:28:57,674 [INFO] Attempting regex parsing for provider: 'TPM'
+2025-08-21 00:28:57,674 [INFO] Successfully parsed log from 'TPM' with regex.
+2025-08-21 00:28:57,674 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-IsolatedUserMode'
+2025-08-21 00:28:57,675 [INFO] Successfully parsed log from 'Microsoft-Windows-IsolatedUserMode' with regex.
+2025-08-21 00:28:57,675 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-IsolatedUserMode'
+2025-08-21 00:28:57,675 [INFO] Successfully parsed log from 'Microsoft-Windows-IsolatedUserMode' with regex.
+2025-08-21 00:28:57,675 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-DNS-Client'
+2025-08-21 00:28:57,675 [INFO] No regex match found for provider 'Microsoft-Windows-DNS-Client'.
+2025-08-21 00:28:57,675 [INFO] Regex failed for provider 'Microsoft-Windows-DNS-Client'. Trying LLM...
+2025-08-21 00:28:57,675 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,676 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,676 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,676 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,676 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,677 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,677 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,677 [INFO] Attempting regex parsing for provider: 'Win32k'
+2025-08-21 00:28:57,677 [INFO] Successfully parsed log from 'Win32k' with regex.
+2025-08-21 00:28:57,677 [INFO] Attempting regex parsing for provider: 'Win32k'
+2025-08-21 00:28:57,677 [INFO] Successfully parsed log from 'Win32k' with regex.
+2025-08-21 00:28:57,678 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,678 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,678 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-DNS-Client'
+2025-08-21 00:28:57,678 [INFO] No regex match found for provider 'Microsoft-Windows-DNS-Client'.
+2025-08-21 00:28:57,678 [INFO] Regex failed for provider 'Microsoft-Windows-DNS-Client'. Trying LLM...
+2025-08-21 00:28:57,678 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,678 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,679 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,679 [INFO] Attempting regex parsing for provider: 'Win32k'
+2025-08-21 00:28:57,679 [INFO] Successfully parsed log from 'Win32k' with regex.
+2025-08-21 00:28:57,679 [INFO] Attempting regex parsing for provider: 'Win32k'
+2025-08-21 00:28:57,679 [INFO] Successfully parsed log from 'Win32k' with regex.
+2025-08-21 00:28:57,680 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,680 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,680 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,680 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,680 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,680 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,681 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,681 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,681 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,682 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,682 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,682 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,682 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,682 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,683 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,683 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,683 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,683 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,684 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,684 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,684 [INFO] Attempting regex parsing for provider: 'Win32k'
+2025-08-21 00:28:57,684 [INFO] Successfully parsed log from 'Win32k' with regex.
+2025-08-21 00:28:57,685 [INFO] Attempting regex parsing for provider: 'Win32k'
+2025-08-21 00:28:57,685 [INFO] Successfully parsed log from 'Win32k' with regex.
+2025-08-21 00:28:57,685 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-DNS-Client'
+2025-08-21 00:28:57,686 [INFO] No regex match found for provider 'Microsoft-Windows-DNS-Client'.
+2025-08-21 00:28:57,686 [INFO] Regex failed for provider 'Microsoft-Windows-DNS-Client'. Trying LLM...
+2025-08-21 00:28:57,686 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,686 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,686 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,687 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,687 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,688 [INFO] Attempting regex parsing for provider: 'Win32k'
+2025-08-21 00:28:57,688 [INFO] Successfully parsed log from 'Win32k' with regex.
+2025-08-21 00:28:57,688 [INFO] Attempting regex parsing for provider: 'Win32k'
+2025-08-21 00:28:57,689 [INFO] Successfully parsed log from 'Win32k' with regex.
+2025-08-21 00:28:57,689 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,689 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,689 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,690 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,690 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,690 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,690 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-DNS-Client'
+2025-08-21 00:28:57,690 [INFO] No regex match found for provider 'Microsoft-Windows-DNS-Client'.
+2025-08-21 00:28:57,690 [INFO] Regex failed for provider 'Microsoft-Windows-DNS-Client'. Trying LLM...
+2025-08-21 00:28:57,691 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,691 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-DNS-Client'
+2025-08-21 00:28:57,691 [INFO] No regex match found for provider 'Microsoft-Windows-DNS-Client'.
+2025-08-21 00:28:57,691 [INFO] Regex failed for provider 'Microsoft-Windows-DNS-Client'. Trying LLM...
+2025-08-21 00:28:57,691 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,691 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-DNS-Client'
+2025-08-21 00:28:57,692 [INFO] No regex match found for provider 'Microsoft-Windows-DNS-Client'.
+2025-08-21 00:28:57,692 [INFO] Regex failed for provider 'Microsoft-Windows-DNS-Client'. Trying LLM...
+2025-08-21 00:28:57,692 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,693 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-DNS-Client'
+2025-08-21 00:28:57,693 [INFO] No regex match found for provider 'Microsoft-Windows-DNS-Client'.
+2025-08-21 00:28:57,693 [INFO] Regex failed for provider 'Microsoft-Windows-DNS-Client'. Trying LLM...
+2025-08-21 00:28:57,693 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,693 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-DNS-Client'
+2025-08-21 00:28:57,693 [INFO] No regex match found for provider 'Microsoft-Windows-DNS-Client'.
+2025-08-21 00:28:57,694 [INFO] Regex failed for provider 'Microsoft-Windows-DNS-Client'. Trying LLM...
+2025-08-21 00:28:57,694 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,694 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-DNS-Client'
+2025-08-21 00:28:57,694 [INFO] No regex match found for provider 'Microsoft-Windows-DNS-Client'.
+2025-08-21 00:28:57,694 [INFO] Regex failed for provider 'Microsoft-Windows-DNS-Client'. Trying LLM...
+2025-08-21 00:28:57,695 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,695 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-DNS-Client'
+2025-08-21 00:28:57,695 [INFO] No regex match found for provider 'Microsoft-Windows-DNS-Client'.
+2025-08-21 00:28:57,695 [INFO] Regex failed for provider 'Microsoft-Windows-DNS-Client'. Trying LLM...
+2025-08-21 00:28:57,695 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,695 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-DNS-Client'
+2025-08-21 00:28:57,695 [INFO] No regex match found for provider 'Microsoft-Windows-DNS-Client'.
+2025-08-21 00:28:57,695 [INFO] Regex failed for provider 'Microsoft-Windows-DNS-Client'. Trying LLM...
+2025-08-21 00:28:57,696 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,696 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-DNS-Client'
+2025-08-21 00:28:57,696 [INFO] No regex match found for provider 'Microsoft-Windows-DNS-Client'.
+2025-08-21 00:28:57,696 [INFO] Regex failed for provider 'Microsoft-Windows-DNS-Client'. Trying LLM...
+2025-08-21 00:28:57,697 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,697 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:28:57,697 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:28:57,697 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-DNS-Client'
+2025-08-21 00:28:57,697 [INFO] No regex match found for provider 'Microsoft-Windows-DNS-Client'.
+2025-08-21 00:28:57,697 [INFO] Regex failed for provider 'Microsoft-Windows-DNS-Client'. Trying LLM...
+2025-08-21 00:28:57,698 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,698 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-DNS-Client'
+2025-08-21 00:28:57,698 [INFO] No regex match found for provider 'Microsoft-Windows-DNS-Client'.
+2025-08-21 00:28:57,698 [INFO] Regex failed for provider 'Microsoft-Windows-DNS-Client'. Trying LLM...
+2025-08-21 00:28:57,698 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,698 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-DNS-Client'
+2025-08-21 00:28:57,698 [INFO] No regex match found for provider 'Microsoft-Windows-DNS-Client'.
+2025-08-21 00:28:57,699 [INFO] Regex failed for provider 'Microsoft-Windows-DNS-Client'. Trying LLM...
+2025-08-21 00:28:57,699 [WARNING] GROQ_API_KEY environment variable not set. Skipping LLM parsing.
+2025-08-21 00:28:57,699 [INFO] Reached event at 2025-08-20 14:45:32+00:00, which is before the desired start time of 2025-08-20 14:58:57.618548+00:00. Stopping.
+2025-08-21 00:28:57,699 [INFO] Finished fetching logs from 'System'. Total events yielded: 106.
+2025-08-21 00:28:57,701 [INFO] Event log handle closed.
+2025-08-21 00:28:57,701 [INFO] 
+Processing summary:
+2025-08-21 00:28:57,702 [INFO] Total logs processed: 106
+2025-08-21 00:28:57,702 [INFO] Parsed with regex: 71 (67.0%)
+2025-08-21 00:28:57,702 [INFO] Parsed with LLM: 0 (0.0%)
+2025-08-21 00:28:57,702 [INFO] Failed to parse: 35 (33.0%)
+2025-08-21 00:28:57,702 [INFO] Total successfully parsed: 71 (67.0%)
+2025-08-21 00:28:57,702 [INFO] Log processing complete.
+2025-08-21 00:28:57,703 [INFO] ================================================================================
