@@ -2,27 +2,41 @@ import os
 import logging
 import logging.handlers
 from datetime import datetime
+from dotenv import load_dotenv
 
-# Create log directory if it doesn't exist
-log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
+# Load environment variables
+load_dotenv()
+
+# Create log directory if it doesn't exist - use path from environment or default
+log_dir = os.getenv("LOG_PATH", os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs'))
 os.makedirs(log_dir, exist_ok=True)
 
 # Log file name with timestamp
 log_file = os.path.join(log_dir, f'intellios_log_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
 
-# Define two logging levels
+# Define logging levels mapping
 LOG_LEVELS = {
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "WARNING": logging.WARNING,
+    "ERROR": logging.ERROR,
+    "CRITICAL": logging.CRITICAL,
+    # For backwards compatibility
     "1": logging.INFO,     # Minimal logging
     "2": logging.DEBUG     # Comprehensive logging
 }
 
-def setup_logging(level="1"):
+def setup_logging(level=None):
     """
     Configure logging for the application.
     
     Args:
-        level: "1" for minimal logging, "2" for comprehensive logging
+        level: Logging level string ("DEBUG", "INFO", etc.) or legacy level ("1", "2")
+               If None, uses the LOG_LEVEL from environment variables
     """
+    if level is None:
+        level = os.getenv("LOG_LEVEL", "INFO")
+    
     # Get the numeric logging level
     numeric_level = LOG_LEVELS.get(level, logging.INFO)
     
@@ -45,7 +59,7 @@ def setup_logging(level="1"):
     file_handler.setLevel(numeric_level)
     
     # Create formatters
-    if level == "1":  # Minimal format
+    if numeric_level == logging.INFO:  # Minimal format
         log_format = '%(asctime)s [%(levelname)s] %(message)s'
     else:  # Comprehensive format
         log_format = '%(asctime)s [%(levelname)s] %(name)s:%(lineno)d - %(message)s'
@@ -61,8 +75,8 @@ def setup_logging(level="1"):
     root_logger.addHandler(file_handler)
     
     # Log the level being used
-    root_logger.info(f"Logging initialized at {'MINIMAL' if level == '1' else 'COMPREHENSIVE'} level")
-    if level == "2":
+    root_logger.info(f"Logging initialized at {logging.getLevelName(numeric_level)} level")
+    if numeric_level == logging.DEBUG:
         root_logger.debug("Debug logging is enabled")
         
     return root_logger

@@ -6,13 +6,20 @@ import instructor
 from config import ActivityLog
 import logging
 import httpx
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
 # Initialize Groq client with instructor
-# Using hardcoded API key for demonstration purposes
-api_key = "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"
+api_key = os.getenv("GROQ_API_KEY")
+if not api_key:
+    logger.error("GROQ_API_KEY not found in environment variables")
+    raise ValueError("GROQ_API_KEY environment variable is required")
+    
 client = instructor.patch(groq.Groq(api_key=api_key))
 
 def parse_with_llm(provider: str, message: str, max_retries=3, base_delay=5):

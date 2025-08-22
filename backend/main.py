@@ -8,6 +8,7 @@ from logging_config import setup_logging
 from log_fetcher import fetch_windows_event_logs
 from regex_parsers import parse_with_regex
 from llm_layer import parse_with_llm
+from vector_db import VectorDBManager
 
 # Set up the logger
 logger = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ def parse_arguments():
         type=int, 
         default=24,
         help='Process logs from the last N hours (default: 24)'
-    )
+        )
     parser.add_argument(
         '--limit', 
         type=int, 
@@ -44,6 +45,33 @@ def parse_arguments():
         '--print-logs',
         action='store_true',
         help='Print the parsed logs at the end of processing'
+    )
+    parser.add_argument(
+        '--use-vector-db',
+        action='store_true',
+        help='Store parsed logs in vector database'
+    )
+    parser.add_argument(
+        '--query-vector-db',
+        type=str,
+        help='Query the vector database with the given text'
+    )
+    parser.add_argument(
+        '--query-results',
+        type=int,
+        default=5,
+        help='Number of results to return when querying the vector database'
+    )
+    parser.add_argument(
+        '--clear-vector-db',
+        action='store_true',
+        help='Clear all logs from the vector database'
+    )
+    parser.add_argument(
+        '--topic-matches',
+        type=int,
+        default=3,
+        help='Number of topic matches to show for each log'
     )
     return parser.parse_args()
 
@@ -121,6 +149,39 @@ if __name__ == "__main__":
     logger.info("=" * 80)
     logger.info(f"Logging level: {'MINIMAL' if args.log_level == '1' else 'COMPREHENSIVE'}")
     
+    # Initialize vector database manager if needed
+    if args.use_vector_db or args.query_vector_db or args.clear_vector_db:
+        logger.info("Initializing Vector Database")
+        vector_db = VectorDBManager()
+    
+    # Clear vector database if requested
+    if args.clear_vector_db:
+        logger.info("Clearing vector database")
+        if vector_db.clear_collection():
+            print("Vector database cleared successfully")
+        else:
+            print("Failed to clear vector database")
+        logger.info("Vector database clearing complete.")
+        logger.info("=" * 80)
+        sys.exit(0)
+    
+    # If we're just querying the vector database, skip log processing
+    if args.query_vector_db:
+        logger.info(f"Querying vector database with: '{args.query_vector_db}'")
+        results = vector_db.query_logs(args.query_vector_db, args.query_results)
+        
+        print(f"\nFound {len(results)} logs matching query: '{args.query_vector_db}'\n")
+        for i, log in enumerate(results, 1):
+            print(f"{i}. {log}")
+        
+        # Get stats
+        stats = vector_db.get_stats()
+        print(f"\nVector Database Stats: {stats}")
+        
+        logger.info("Query complete.")
+        logger.info("=" * 80)
+        sys.exit(0)
+    
     # Calculate the start time for log fetching
     fetch_since = datetime.now(timezone.utc) - timedelta(hours=args.hours)
     
@@ -129,6 +190,36 @@ if __name__ == "__main__":
     
     # Print logs if requested
     if args.print_logs:
+        print("\nParsed Logs:")
+        for i, log in enumerate(parsed_logs, 1):
+            print(f"\n{i}. {log}")
+    
+    # Store logs in vector database if requested
+    if args.use_vector_db and parsed_logs:
+        logger.info(f"Storing {len(parsed_logs)} logs in vector database")
+        enriched_logs = vector_db.add_logs(parsed_logs)
+        
+        # Print logs with topic matches
+        if args.print_logs:
+            print("\nLogs with Topic Matches:")
+            for i, log in enumerate(enriched_logs, 1):
+                print(f"\n{i}. {log['event_type']}: {log['summary']}")
+                
+                if 'topic_matches' in log:
+                    print("  Topic Matches:")
+                    for match in log['topic_matches']:
+                        print(f"    - {match['topic']} (Score: {match['score']}): {match['description']}")
+                
+                print("  Full Log:")
+                for key, value in log.items():
+                    if key != 'topic_matches':  # We already printed this above
+                        print(f"    {key}: {value}")
+        
+        # Get stats
+        stats = vector_db.get_stats()
+        logger.info(f"Vector Database Stats: {stats}")
+    # Print logs if requested and we didn't already print them with topic matches
+    elif args.print_logs:
         print("\nParsed Logs:")
         for i, log in enumerate(parsed_logs, 1):
             print(f"\n{i}. {log}")
