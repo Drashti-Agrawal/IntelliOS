@@ -18,17 +18,17 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Add parent directory to path to import IntelliOS modules
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import IntelliOS modules
-from logging_config import setup_logging
-from log_fetcher import fetch_windows_event_logs
-from regex_parsers import parse_with_regex
-from llm_layer import parse_with_llm
-from vector_db import VectorDBManager
-from topics import TOPICS
-# Import the process_logs function from main.py
-from main import process_logs
+from config.logging_config import setup_logging
+from pipeline.log_fetcher import fetch_windows_event_logs
+from pipeline.regex_parsers import parse_with_regex
+from pipeline.llm_layer import parse_with_llm
+from storage.vector_db import VectorDBManager
+from core.topics import TOPICS
+# Import the process_logs function from pipeline
+from pipeline.log_processor import process_logs
 
 # Set up the logger
 logger = logging.getLogger(__name__)

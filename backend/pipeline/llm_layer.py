@@ -1,12 +1,13 @@
 # llm_layer.py
 import os
+import sys
 import time
-import groq
-import instructor
-from config import ActivityLog
 import logging
 import httpx
 from dotenv import load_dotenv
+
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Load environment variables
 load_dotenv()
@@ -14,13 +15,26 @@ load_dotenv()
 # Set up logging
 logger = logging.getLogger(__name__)
 
-# Initialize Groq client with instructor
-api_key = os.getenv("GROQ_API_KEY")
-if not api_key:
-    logger.error("GROQ_API_KEY not found in environment variables")
-    raise ValueError("GROQ_API_KEY environment variable is required")
-    
-client = instructor.patch(groq.Groq(api_key=api_key))
+def _get_llm_client():
+    """Initialize LLM client lazily to avoid import-time errors"""
+    try:
+        import groq
+        import instructor
+        from config.config import ActivityLog
+        
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            logger.warning("GROQ_API_KEY not found in environment variables. LLM parsing will be disabled.")
+            return None, None
+            
+        client = instructor.patch(groq.Groq(api_key=api_key))
+        return client, ActivityLog
+    except ImportError as e:
+        logger.warning(f"LLM dependencies not available: {e}. LLM parsing will be disabled.")
+        return None, None
+    except Exception as e:
+        logger.error(f"Failed to initialize LLM client: {e}")
+        return None, None
 
 def parse_with_llm(provider: str, message: str, max_retries=3, base_delay=5):
     """
@@ -33,7 +47,13 @@ def parse_with_llm(provider: str, message: str, max_retries=3, base_delay=5):
         max_retries: Maximum number of retries for rate limit errors
         base_delay: Base delay in seconds for exponential backoff
     """
-    # Removed duplicate try-except block
+    # Get LLM client lazily
+    client, ActivityLog = _get_llm_client()
+    
+    if client is None or ActivityLog is None:
+        logger.warning("LLM client not available. Skipping LLM parsing.")
+        return None
+    
     retry_count = 0
     while retry_count <= max_retries:
         try:

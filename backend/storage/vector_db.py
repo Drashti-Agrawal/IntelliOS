@@ -1,5 +1,6 @@
 # vector_db.py
 import os
+import sys
 import logging
 import chromadb
 import time
@@ -7,7 +8,11 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 from typing import List, Dict, Any, Tuple
 import json
-from topics import TOPICS, TOPIC_EXAMPLES
+
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from core.topics import TOPICS, TOPIC_EXAMPLES
 from dotenv import load_dotenv
 
 # Load environment variables
