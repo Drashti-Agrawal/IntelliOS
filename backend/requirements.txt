@@ -17,3 +17,21 @@ pydantic-settings>=2.0.0
 # Utils
 numpy>=1.24.0
 httpx>=0.24.1
+
+# Agentic AI - LangGraph & LangChain Ecosystem
+langgraph>=0.2.0          # Multi-agent workflow orchestration
+langchain>=0.2.0          # Core LangChain framework
+langchain-groq>=0.1.0     # Groq integration for LangChain
+langchain-community>=0.2.0 # Community integrations
+langsmith>=0.2.0          # Observability and debugging
+langchain-core>=0.2.0     # Core LangChain components
+
+# Firebase for real-time dDNA state management
+firebase-admin>=6.4.0      # Firebase Admin SDK
+google-cloud-firestore>=2.14.0  # Firestore client
+
+# Additional utilities for agentic system
+psutil>=5.9.0              # System and process utilities
+pyautogui>=0.9.54          # GUI automation (for workspace management)
+keyboard>=0.13.5           # Keyboard input monitoring
+mouse>=0.7.1               # Mouse input monitoring

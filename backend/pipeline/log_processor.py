@@ -17,7 +17,7 @@ from storage.vector_db import VectorDBManager
 # Set up the logger
 logger = logging.getLogger(__name__)
 
-def parse_arguments():
+def parse_arguments(args=None):
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description='IntelliOS Log Processing System')
     parser.add_argument(
@@ -77,7 +77,7 @@ def parse_arguments():
         default=3,
         help='Number of topic matches to show for each log'
     )
-    return parser.parse_args()
+    return parser.parse_args(args)
 
 def process_logs(log_channel, fetch_since, limit=None):
     """

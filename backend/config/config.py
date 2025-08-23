@@ -8,7 +8,8 @@ class ActivityLog(BaseModel):
     """Schema for a single structured log event."""
     event_type: Literal[
         "file_interaction", 
-        "app_lifecycle", 
+        # "app_lifecycle", 
+        "application_lifecycle",  # Added for LLM compatibility
         "system_event", 
         "application_crash", 
         "service_event", 

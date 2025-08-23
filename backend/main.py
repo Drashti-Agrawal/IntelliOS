@@ -22,7 +22,12 @@ def run_api_server():
 def run_log_processor():
     """Run the log processing pipeline"""
     from pipeline.log_processor import parse_arguments, process_logs
-    args = parse_arguments()
+    
+    # Parse arguments from command line (excluding the 'process-logs' command)
+    import sys
+    # Remove the script name and 'process-logs' command from sys.argv
+    log_args = sys.argv[2:]  # Skip 'main.py' and 'process-logs'
+    args = parse_arguments(log_args)
     
     # Set up logging level
     os.environ['LOG_LEVEL'] = args.log_level
@@ -38,8 +43,7 @@ def run_log_processor():
     if args.use_vector_db:
         from storage.vector_db import VectorDBManager
         vector_db = VectorDBManager()
-        for log in parsed_logs:
-            vector_db.add_log(log)
+        vector_db.add_logs(parsed_logs)
         print(f"Stored {len(parsed_logs)} logs in vector database")
     
     if args.query_vector_db:
@@ -47,8 +51,9 @@ def run_log_processor():
         vector_db = VectorDBManager()
         results = vector_db.query_logs(args.query_vector_db, args.query_results)
         print(f"Query results for '{args.query_vector_db}':")
-        for result in results:
-            print(f"- {result['summary']} (score: {result['score']:.3f})")
+        for i, result in enumerate(results, 1):
+            summary = result.get('summary', 'No summary available')
+            print(f"{i}. {summary}")
     
     if args.clear_vector_db:
         from storage.vector_db import VectorDBManager
@@ -70,7 +75,8 @@ def main():
         help='Command to run: server (API server) or process-logs (log processing)'
     )
     
-    args = parser.parse_args()
+    # Parse only the command, ignore other arguments
+    args, unknown = parser.parse_known_args()
     
     if args.command == 'server':
         print("Starting IntelliOS API server...")
