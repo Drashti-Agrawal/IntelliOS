@@ -97,6 +97,28 @@ class ExecutionPlan(BaseModel):
     priority: Literal["low", "medium", "high"] = Field("medium", description="Plan priority")
 
 
+class WorkspaceContext(BaseModel):
+    """Represents workspace configuration and context."""
+    workspace_type: str = Field(..., description="Type of workspace (python, javascript, etc.)")
+    workspace_path: str = Field(..., description="Path to the workspace")
+    project_structure: Dict[str, Any] = Field(default_factory=dict, description="Project structure information")
+    dependencies: Dict[str, List[str]] = Field(default_factory=dict, description="Project dependencies")
+    ide_configuration: Dict[str, Any] = Field(default_factory=dict, description="IDE configuration")
+    last_updated: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Last update timestamp")
+
+
+class SystemResources(BaseModel):
+    """Represents system resource usage and available tools."""
+    cpu_usage: float = Field(..., description="Current CPU usage percentage")
+    memory_usage: float = Field(..., description="Current memory usage percentage")
+    memory_available: int = Field(..., description="Available memory in bytes")
+    disk_usage: float = Field(..., description="Current disk usage percentage")
+    disk_available: int = Field(..., description="Available disk space in bytes")
+    network_connections: int = Field(..., description="Number of network connections")
+    available_tools: List[str] = Field(default_factory=list, description="List of available tools")
+    last_updated: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Last update timestamp")
+
+
 class ExecutionLog(BaseModel):
     """Represents execution history and logs."""
     entries: List[Dict[str, Any]] = Field(default_factory=list, description="Execution log entries")
@@ -139,6 +161,10 @@ class DigitalDNAState(BaseModel):
     execution_plan: Optional[ExecutionPlan] = Field(None, description="Current execution plan")
     execution_log: ExecutionLog = Field(default_factory=ExecutionLog, description="Execution history")
     
+    # Workspace and system context
+    workspace_context: Optional[WorkspaceContext] = Field(None, description="Workspace configuration and context")
+    system_resources: Optional[SystemResources] = Field(None, description="System resource usage and available tools")
+    
     # Agent communication
     agent_messages: List[Dict[str, Any]] = Field(default_factory=list, description="Inter-agent messages")
     feedback: Optional[str] = Field(None, description="User feedback or notes")
@@ -156,9 +182,33 @@ class DigitalDNAState(BaseModel):
 
 
 # Convenience functions for state management
-def create_initial_state(user_id: str, device_context: DeviceContext, file_context: FileContext) -> DigitalDNAState:
+def create_initial_state(user_id: str = "default_user", device_context: DeviceContext = None, file_context: FileContext = None) -> DigitalDNAState:
     """Create an initial dDNA state with basic information."""
     session_id = f"{user_id}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+    
+    # Create default device context if not provided
+    if device_context is None:
+        import platform
+        import psutil
+        
+        device_context = DeviceContext(
+            device_id=f"device_{platform.node()}",
+            device_type="desktop",
+            os_type=platform.system().lower(),
+            os_version=platform.version(),
+            screen_resolution={"width": 1920, "height": 1080},
+            available_memory=psutil.virtual_memory().available // (1024 * 1024),  # MB
+            cpu_usage=psutil.cpu_percent(),
+            network_status="connected"
+        )
+    
+    # Create default file context if not provided
+    if file_context is None:
+        import os
+        file_context = FileContext(
+            downloads_folder=os.path.expanduser("~/Downloads"),
+            documents_folder=os.path.expanduser("~/Documents")
+        )
     
     return DigitalDNAState(
         user_id=user_id,
@@ -215,6 +265,8 @@ __all__ = [
     "UserPreferences",
     "TaskIntent",
     "ExecutionPlan",
+    "WorkspaceContext",
+    "SystemResources",
     "ExecutionLog",
     "create_initial_state",
     "update_state_timestamp",
