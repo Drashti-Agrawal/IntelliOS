@@ -36,30 +36,47 @@ def run_log_processor():
     from datetime import datetime, timedelta, timezone
     fetch_since = datetime.now(timezone.utc) - timedelta(hours=args.hours)
     
-    # Process logs
-    parsed_logs = process_logs(args.channel, fetch_since, args.limit)
-    
-    # Handle vector database operations
-    if args.use_vector_db:
-        from storage.vector_db import VectorDBManager
-        vector_db = VectorDBManager()
-        vector_db.add_logs(parsed_logs)
-        print(f"Stored {len(parsed_logs)} logs in vector database")
+    # If we're just querying or clearing the vector database, skip log processing
+    if args.query_vector_db or args.clear_vector_db:
+        pass  # Skip log processing for queries and clear operations
+    else:
+        # Process logs
+        parsed_logs = process_logs(args.channel, fetch_since, args.limit)
+        
+        # Handle vector database operations
+        if args.use_vector_db:
+            from storage.vector_db import VectorDBManager
+            vector_db = VectorDBManager()
+            vector_db.add_logs(parsed_logs)
+            print(f"Stored {len(parsed_logs)} logs in vector database")
+        
+        if args.print_logs:
+            print(f"\nProcessed {len(parsed_logs)} logs:")
+            for log in parsed_logs:
+                print(f"- {log['summary']}")
     
     if args.query_vector_db:
         from storage.vector_db import VectorDBManager
+        print(f"Querying vector database for: '{args.query_vector_db}'")
         vector_db = VectorDBManager()
         results = vector_db.query_logs(args.query_vector_db, args.query_results)
-        print(f"Query results for '{args.query_vector_db}':")
+        print(f"Found {len(results)} results:")
         for i, result in enumerate(results, 1):
             summary = result.get('summary', 'No summary available')
             print(f"{i}. {summary}")
+        
+        # Get stats
+        stats = vector_db.get_stats()
+        print(f"\nVector Database Stats: {stats}")
     
     if args.clear_vector_db:
         from storage.vector_db import VectorDBManager
+        print("Clearing vector database...")
         vector_db = VectorDBManager()
-        vector_db.clear_all_logs()
-        print("Vector database cleared")
+        if vector_db.clear_collection():
+            print("Vector database cleared successfully")
+        else:
+            print("Failed to clear vector database")
     
     if args.print_logs:
         print(f"\nProcessed {len(parsed_logs)} logs:")

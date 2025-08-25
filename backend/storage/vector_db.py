@@ -436,10 +436,19 @@ class VectorDBManager:
         """
         try:
             logger.info(f"Clearing collection '{self.collection.name}'")
-            self.collection.delete()
             
-            # Recreate the collection
-            self.collection = self.client.create_collection(name=self.collection.name)
+            # Get all IDs in the collection
+            count = self.collection.count()
+            if count == 0:
+                logger.info("Collection is already empty")
+                return True
+            
+            # Get all documents to delete them
+            results = self.collection.get(limit=count)
+            if results['ids']:
+                self.collection.delete(ids=results['ids'])
+                logger.info(f"Deleted {len(results['ids'])} documents from collection")
+            
             logger.info(f"Collection '{self.collection.name}' cleared successfully")
             return True
         except Exception as e:
