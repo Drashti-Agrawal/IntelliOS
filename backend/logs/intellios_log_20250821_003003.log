@@ -1,0 +1,97 @@
+2025-08-21 00:30:04,682 [INFO] Logging initialized at MINIMAL level
+2025-08-21 00:30:04,683 [INFO] ================================================================================
+2025-08-21 00:30:04,683 [INFO] IntelliOS Log Processing System
+2025-08-21 00:30:04,683 [INFO] ================================================================================
+2025-08-21 00:30:04,683 [INFO] Logging level: MINIMAL
+2025-08-21 00:30:04,684 [INFO] Starting log processing for channel 'System' since 2025-08-20 18:00:04.684137+00:00
+2025-08-21 00:30:04,684 [INFO] Opening event log channel: 'System'
+2025-08-21 00:30:04,693 [INFO] Attempting regex parsing for provider: 'Service Control Manager'
+2025-08-21 00:30:04,693 [INFO] Successfully parsed log from 'Service Control Manager' with regex.
+2025-08-21 00:30:04,694 [INFO] Attempting regex parsing for provider: 'Service Control Manager'
+2025-08-21 00:30:04,694 [INFO] Successfully parsed log from 'Service Control Manager' with regex.
+2025-08-21 00:30:04,695 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:30:04,695 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:30:04,695 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:30:04,695 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:30:04,696 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-WindowsUpdateClient'
+2025-08-21 00:30:04,697 [INFO] No regex match found for provider 'Microsoft-Windows-WindowsUpdateClient'.
+2025-08-21 00:30:04,697 [INFO] Regex failed for provider 'Microsoft-Windows-WindowsUpdateClient'. Trying LLM...
+2025-08-21 00:30:04,697 [INFO] Attempting LLM parsing for provider: 'Microsoft-Windows-WindowsUpdateClient'
+2025-08-21 00:30:05,854 [INFO] HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-08-21 00:30:05,872 [INFO] LLM parsing successful for provider: 'Microsoft-Windows-WindowsUpdateClient'
+2025-08-21 00:30:05,873 [INFO] Successfully parsed log from 'Microsoft-Windows-WindowsUpdateClient' with LLM.
+2025-08-21 00:30:05,873 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-WindowsUpdateClient'
+2025-08-21 00:30:05,874 [INFO] No regex match found for provider 'Microsoft-Windows-WindowsUpdateClient'.
+2025-08-21 00:30:05,874 [INFO] Regex failed for provider 'Microsoft-Windows-WindowsUpdateClient'. Trying LLM...
+2025-08-21 00:30:05,874 [INFO] Attempting LLM parsing for provider: 'Microsoft-Windows-WindowsUpdateClient'
+2025-08-21 00:30:06,567 [INFO] HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-08-21 00:30:06,572 [INFO] LLM parsing successful for provider: 'Microsoft-Windows-WindowsUpdateClient'
+2025-08-21 00:30:06,573 [INFO] Successfully parsed log from 'Microsoft-Windows-WindowsUpdateClient' with LLM.
+2025-08-21 00:30:06,573 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-WindowsUpdateClient'
+2025-08-21 00:30:06,574 [INFO] No regex match found for provider 'Microsoft-Windows-WindowsUpdateClient'.
+2025-08-21 00:30:06,575 [INFO] Regex failed for provider 'Microsoft-Windows-WindowsUpdateClient'. Trying LLM...
+2025-08-21 00:30:06,575 [INFO] Attempting LLM parsing for provider: 'Microsoft-Windows-WindowsUpdateClient'
+2025-08-21 00:30:07,248 [INFO] HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-08-21 00:30:07,252 [INFO] LLM parsing successful for provider: 'Microsoft-Windows-WindowsUpdateClient'
+2025-08-21 00:30:07,252 [INFO] Successfully parsed log from 'Microsoft-Windows-WindowsUpdateClient' with LLM.
+2025-08-21 00:30:07,253 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:30:07,253 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:30:07,254 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Power'
+2025-08-21 00:30:07,254 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Power' with regex.
+2025-08-21 00:30:07,255 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Time-Service'
+2025-08-21 00:30:07,257 [INFO] No regex match found for provider 'Microsoft-Windows-Time-Service'.
+2025-08-21 00:30:07,257 [INFO] Regex failed for provider 'Microsoft-Windows-Time-Service'. Trying LLM...
+2025-08-21 00:30:07,258 [INFO] Attempting LLM parsing for provider: 'Microsoft-Windows-Time-Service'
+2025-08-21 00:30:07,928 [INFO] HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-08-21 00:30:07,933 [INFO] LLM parsing successful for provider: 'Microsoft-Windows-Time-Service'
+2025-08-21 00:30:07,934 [INFO] Successfully parsed log from 'Microsoft-Windows-Time-Service' with LLM.
+2025-08-21 00:30:07,935 [INFO] Attempting regex parsing for provider: 'TPM'
+2025-08-21 00:30:07,935 [INFO] Successfully parsed log from 'TPM' with regex.
+2025-08-21 00:30:07,937 [INFO] Attempting regex parsing for provider: 'TPM'
+2025-08-21 00:30:07,937 [INFO] Successfully parsed log from 'TPM' with regex.
+2025-08-21 00:30:07,937 [INFO] Attempting regex parsing for provider: 'TPM'
+2025-08-21 00:30:07,938 [INFO] Successfully parsed log from 'TPM' with regex.
+2025-08-21 00:30:07,938 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-IsolatedUserMode'
+2025-08-21 00:30:07,938 [INFO] Successfully parsed log from 'Microsoft-Windows-IsolatedUserMode' with regex.
+2025-08-21 00:30:07,938 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-IsolatedUserMode'
+2025-08-21 00:30:07,939 [INFO] Successfully parsed log from 'Microsoft-Windows-IsolatedUserMode' with regex.
+2025-08-21 00:30:07,939 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Time-Service'
+2025-08-21 00:30:07,939 [INFO] No regex match found for provider 'Microsoft-Windows-Time-Service'.
+2025-08-21 00:30:07,939 [INFO] Regex failed for provider 'Microsoft-Windows-Time-Service'. Trying LLM...
+2025-08-21 00:30:07,939 [INFO] Attempting LLM parsing for provider: 'Microsoft-Windows-Time-Service'
+2025-08-21 00:30:08,566 [INFO] HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-08-21 00:30:08,572 [INFO] LLM parsing successful for provider: 'Microsoft-Windows-Time-Service'
+2025-08-21 00:30:08,573 [INFO] Successfully parsed log from 'Microsoft-Windows-Time-Service' with LLM.
+2025-08-21 00:30:08,573 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Time-Service'
+2025-08-21 00:30:08,573 [INFO] No regex match found for provider 'Microsoft-Windows-Time-Service'.
+2025-08-21 00:30:08,574 [INFO] Regex failed for provider 'Microsoft-Windows-Time-Service'. Trying LLM...
+2025-08-21 00:30:08,574 [INFO] Attempting LLM parsing for provider: 'Microsoft-Windows-Time-Service'
+2025-08-21 00:30:08,685 [INFO] HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-08-21 00:30:08,686 [INFO] Retrying request to /openai/v1/chat/completions in 13.000000 seconds
+2025-08-21 00:30:22,530 [INFO] HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-08-21 00:30:22,532 [INFO] LLM parsing successful for provider: 'Microsoft-Windows-Time-Service'
+2025-08-21 00:30:22,533 [INFO] Successfully parsed log from 'Microsoft-Windows-Time-Service' with LLM.
+2025-08-21 00:30:22,533 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Processor-Power'
+2025-08-21 00:30:22,534 [INFO] No regex match found for provider 'Microsoft-Windows-Kernel-Processor-Power'.
+2025-08-21 00:30:22,534 [INFO] Regex failed for provider 'Microsoft-Windows-Kernel-Processor-Power'. Trying LLM...
+2025-08-21 00:30:22,535 [INFO] Attempting LLM parsing for provider: 'Microsoft-Windows-Kernel-Processor-Power'
+2025-08-21 00:30:22,626 [INFO] HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-08-21 00:30:22,628 [INFO] Retrying request to /openai/v1/chat/completions in 13.000000 seconds
+2025-08-21 00:30:36,756 [INFO] HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-08-21 00:30:36,759 [INFO] LLM parsing successful for provider: 'Microsoft-Windows-Kernel-Processor-Power'
+2025-08-21 00:30:36,759 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Processor-Power' with LLM.
+2025-08-21 00:30:36,760 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Kernel-Processor-Power'
+2025-08-21 00:30:36,760 [INFO] No regex match found for provider 'Microsoft-Windows-Kernel-Processor-Power'.
+2025-08-21 00:30:36,760 [INFO] Regex failed for provider 'Microsoft-Windows-Kernel-Processor-Power'. Trying LLM...
+2025-08-21 00:30:36,760 [INFO] Attempting LLM parsing for provider: 'Microsoft-Windows-Kernel-Processor-Power'
+2025-08-21 00:30:36,873 [INFO] HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-08-21 00:30:36,873 [INFO] Retrying request to /openai/v1/chat/completions in 13.000000 seconds
+2025-08-21 00:30:50,732 [INFO] HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-08-21 00:30:50,739 [INFO] LLM parsing successful for provider: 'Microsoft-Windows-Kernel-Processor-Power'
+2025-08-21 00:30:50,740 [INFO] Successfully parsed log from 'Microsoft-Windows-Kernel-Processor-Power' with LLM.
+2025-08-21 00:30:50,741 [INFO] Attempting regex parsing for provider: 'Microsoft-Windows-Time-Service'
+2025-08-21 00:30:50,741 [INFO] No regex match found for provider 'Microsoft-Windows-Time-Service'.
+2025-08-21 00:30:50,742 [INFO] Regex failed for provider 'Microsoft-Windows-Time-Service'. Trying LLM...
+2025-08-21 00:30:50,742 [INFO] Attempting LLM parsing for provider: 'Microsoft-Windows-Time-Service'
+2025-08-21 00:30:50,856 [INFO] HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-08-21 00:30:50,858 [INFO] Retrying request to /openai/v1/chat/completions in 14.000000 seconds
