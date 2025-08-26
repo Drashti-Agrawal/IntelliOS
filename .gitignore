@@ -54,4 +54,8 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
+<<<<<<< HEAD
 
+=======
+node_modules
+>>>>>>> 4262ac560d6a95b7da54e5f77554c11073c07624
