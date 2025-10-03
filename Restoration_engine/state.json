@@ -1,13 +1,13 @@
-﻿{
+{
     "saved_at":  "2025-08-26T12:32:41.9607091+05:30",
     "user":  "jaypa",
     "browsers":  [
                      {
                          "browser":  "chrome",
-                         "port":  9222,
                          "windows":  [
                                          {
                                              "windowId":  "DA70F5C5F1CEDDCDF6DA6675F1123CD7",
+                                             "debuggingPort":  9222,
                                              "tabs":  [
                                                           {
                                                               "url":  "https://monkeytype.com/",
@@ -18,18 +18,8 @@
                                                       ]
                                          },
                                          {
-                                             "windowId":  "F4A18BBDDB871AC1B4F3631826BA53CC",
-                                             "tabs":  [
-                                                          {
-                                                              "url":  "https://www.youtube.com/embed/?enablejsapi=1\u0026rel=0\u0026autoplay=0\u0026playsinline=1\u0026expflag=embeds_enable_muted_autoplay%3Atrue\u0026fs=1\u0026hl=en-IN",
-                                                              "title":  "https://www.youtube.com/embed/?enablejsapi=1\u0026amp;rel=0\u0026amp;autoplay=0\u0026amp;playsinline=1\u0026amp;expflag=embeds_enable_muted_autoplay%3Atrue\u0026amp;fs=1\u0026amp;hl=en-IN",
-                                                              "active":  null,
-                                                              "pinned":  null
-                                                          }
-                                                      ]
-                                         },
-                                         {
                                              "windowId":  "D59695731ACC449C997B182BB80A6536",
+                                             "debuggingPort":  9223,
                                              "tabs":  [
                                                           {
                                                               "url":  "https://www.google.com/search?q=hello+jay\u0026oq=he\u0026gs_lcrp=EgZjaHJvbWUqBggAEEUYOzIGCAAQRRg7MgoIARAuGLEDGIAEMgYIAhBFGDkyCggDEAAYsQMYgAQyEAgEEC4YxwEYsQMY0QMYgAQyEAgFEC4YxwEYsQMY0QMYgAQyBwgGEC4YgAQyCggHEC4YsQMYgAQyCggIEAAYsQMYgAQyBwgJEAAYjwLSAQgzNDE0ajBqN6gCALACAA\u0026sourceid=chrome\u0026ie=UTF-8",
@@ -41,6 +31,7 @@
                                          },
                                          {
                                              "windowId":  "74D279FBEDD2716F9E08A369B0C81708",
+                                             "debuggingPort":  9224,
                                              "tabs":  [
                                                           {
                                                               "url":  "https://fast.com/",
@@ -53,15 +44,26 @@
                                      ]
                      }
                  ],
-    "apps":  {
-                 "name":  "EXCEL.EXE",
-                 "pid":  null,
-                 "exe":  "C:\\Program Files\\Microsoft Office\\root\\Office16\\EXCEL.EXE",
-                 "cmdline":  null,
-                 "files":  [
+    "apps": [   {
+                    "name":  "EXCEL.EXE",
+                    "pid":  null,
+                    "exe":  "C:\\Program Files\\Microsoft Office\\root\\Office16\\EXCEL.EXE",
+                    "cmdline":  null,
+                    "files":  [
                                "C:\\Users\\jaypa\\Edunet_AICTE_Internship\\cleaned_dataset.csv",
                                "C:\\Users\\jaypa\\Downloads\\Book_Info.csv"
-                           ],
-                 "mainWindow":  null
-             }
+                    ],
+                    "mainWindow":  null
+                },
+                {
+                    "name":  "EXCEL.EXE",
+                    "pid":  null,
+                    "exe":  "C:\\Program Files\\WindowsApps\\Microsoft.WindowsNotepad_11.2507.26.0_x64__8wekyb3d8bbwe\\Notepad\\Notepad.exe",
+                    "cmdline":  null,
+                    "files":  [
+                               "C:\\Users\\jaypa\\OneDrive\\Desktop\\addverb.txt"
+                    ],
+                    "mainWindow":  null
+                }
+            ]
 }
