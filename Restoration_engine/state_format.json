@@ -1,0 +1,120 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "saved_at": {
+            "type": "string",
+            "description": "ISO 8601 formatted timestamp of when the state was saved",
+            "format": "date-time",
+            "examples": ["2025-08-26T12:32:41.9607091+05:30"]
+        },
+        "user": {
+            "type": "string",
+            "description": "Windows username of the current user",
+            "examples": ["jaypa"]
+        },
+        "browsers": {
+            "type": "array",
+            "description": "List of browser states with their windows and tabs",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "browser": {
+                        "type": "string",
+                        "enum": ["chrome", "edge", "opera"],
+                        "description": "Name of the browser"
+                    },
+                    "windows": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "windowId": {
+                                    "type": "string",
+                                    "description": "Unique identifier for the browser window",
+                                    "examples": ["DA70F5C5F1CEDDCDF6DA6675F1123CD7"]
+                                },
+                                "debuggingPort": {
+                                    "type": "integer",
+                                    "description": "Remote debugging port for this window instance",
+                                    "minimum": 9222,
+                                    "examples": [9222]
+                                },
+                                "tabs": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "url": {
+                                                "type": "string",
+                                                "description": "Full URL of the tab",
+                                                "format": "uri"
+                                            },
+                                            "title": {
+                                                "type": "string",
+                                                "description": "Title of the webpage in the tab"
+                                            },
+                                            "active": {
+                                                "type": ["boolean", "null"],
+                                                "description": "Whether this tab is currently active in the window"
+                                            },
+                                            "pinned": {
+                                                "type": ["boolean", "null"],
+                                                "description": "Whether this tab is pinned"
+                                            }
+                                        },
+                                        "required": ["url", "title"]
+                                    }
+                                }
+                            },
+                            "required": ["windowId", "debuggingPort", "tabs"]
+                        }
+                    }
+                },
+                "required": ["browser", "windows"]
+            }
+        },
+        "apps": {
+            "type": "array",
+            "description": "List of running applications and their opened files",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Executable name of the application",
+                        "examples": ["EXCEL.EXE", "WINWORD.EXE"]
+                    },
+                    "pid": {
+                        "type": ["integer", "null"],
+                        "description": "Process ID of the application instance",
+                        "examples": [1234]
+                    },
+                    "exe": {
+                        "type": ["string", "null"],
+                        "description": "Full path to the executable",
+                        "examples": ["C:\\Program Files\\Microsoft Office\\root\\Office16\\EXCEL.EXE"]
+                    },
+                    "cmdline": {
+                        "type": ["string", "null"],
+                        "description": "Command line arguments used to start the application"
+                    },
+                    "files": {
+                        "type": "array",
+                        "description": "List of files currently opened by the application",
+                        "items": {
+                            "type": "string",
+                            "description": "Full path to an opened file"
+                        }
+                    },
+                    "mainWindow": {
+                        "type": ["string", "null"],
+                        "description": "Title of the main window of the application"
+                    }
+                },
+                "required": ["name", "files"]
+            }
+        }
+    },
+    "required": ["saved_at", "user", "browsers", "apps"]
+}
