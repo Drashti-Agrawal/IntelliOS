@@ -30,6 +30,11 @@ from topics import TOPICS
 # Import the process_logs function from main.py
 from main import process_logs
 
+# Import restoration modules
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Restoration_engine"))
+from browser_restore import restore_browsers
+from app_restore import restore_apps
+
 # Set up the logger
 logger = logging.getLogger(__name__)
 setup_logging()  # Use environment variable LOG_LEVEL
@@ -75,6 +80,15 @@ class LogResponse(BaseModel):
 class TopicListResponse(BaseModel):
     topics: Dict[str, str]
     status: str
+
+# State restoration models
+class RestoreRequest(BaseModel):
+    state_file_path: str
+
+class RestoreResponse(BaseModel):
+    status: str
+    message: str
+    details: Optional[Dict[str, bool]] = None
 
 # In-memory queue for background processed logs
 processed_logs_queue = []
@@ -289,6 +303,81 @@ async def get_vector_db_stats():
     except Exception as e:
         logger.error(f"Error getting vector database stats: {e}")
         raise HTTPException(status_code=500, detail=f"Error getting vector database stats: {str(e)}")
+
+# State Restoration endpoints
+@app.post("/api/restore", response_model=RestoreResponse, tags=["State Restoration"])
+async def restore_state(request: RestoreRequest):
+    """
+    Restore system state from a state file
+    
+    Args:
+        request: RestoreRequest containing the path to the state file
+        
+    Returns:
+        RestoreResponse with status and message
+        
+    Raises:
+        HTTPException: If there are any errors during the restoration process
+    """
+    try:
+        if not os.path.exists(request.state_file_path):
+            raise HTTPException(
+                status_code=404,
+                detail=f"State file not found: {request.state_file_path}"
+            )
+
+        # Read state file
+        try:
+            with open(request.state_file_path, 'r', encoding='utf-8') as f:
+                state = json.load(f)
+        except Exception as e:
+            logger.error(f"Error reading state file: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error reading state file: {str(e)}"
+            )
+
+        restoration_details = {
+            "browsers_restored": False,
+            "apps_restored": False
+        }
+
+        # Restore browsers
+        try:
+            restore_browsers(state)
+            restoration_details["browsers_restored"] = True
+        except Exception as e:
+            logger.error(f"Error restoring browsers: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error restoring browsers: {str(e)}"
+            )
+
+        # Restore apps
+        try:
+            restore_apps(state)
+            restoration_details["apps_restored"] = True
+        except Exception as e:
+            logger.error(f"Error restoring apps: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error restoring apps: {str(e)}"
+            )
+
+        return RestoreResponse(
+            status="success",
+            message="State restored successfully",
+            details=restoration_details
+        )
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Unexpected error in restore_state: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected error: {str(e)}"
+        )
 
 if __name__ == "__main__":
     # Run the server
