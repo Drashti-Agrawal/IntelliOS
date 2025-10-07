@@ -12,7 +12,7 @@ import CompletionScreen from './components/CompletionScreen';
 import ProgressIndicator from './components/ProgressIndicator';
 
 import './index.css';
-import './styles/app.css';
+// import './styles/app.css';
 
 const InstallerWizard = () => {
   const [currentStep, setCurrentStep] = useState(0);
