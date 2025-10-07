@@ -1,9 +1,9 @@
 {
     "chrome": {
         "exe": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-        "profiles": {
-            "work_profile": {
-                "user_data_dir": "work_profile",
+        "profiles": [
+            {
+                "profile": "work_profile",
                 "instances": [
                     {
                         "port": "9222",
@@ -22,7 +22,7 @@
                     }
                 ]
             },
-            "personal_profile": {
+            {
                 "user_data_dir": "personal_profile",
                 "instances": [
                     {
@@ -37,7 +37,7 @@
                     }
                 ]
             }
-        }
+        ]
     },
     "msedge": {
         "exe": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",

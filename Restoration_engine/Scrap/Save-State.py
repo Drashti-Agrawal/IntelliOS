@@ -8,31 +8,25 @@ import win32com.client
 import win32process
 import win32gui
 
-OUT_FILE = r"D:\Major\Restoration_engine\state.json"
-BROWSER_PORTS_FILE = r"D:\Major\IntelliOS\Restoration_engine\browser_ports.json"
+OUT_FILE = r"D:\\Major\\Restoration_engine\\state.json"
+BROWSER_PORTS_FILE = r"D:\\Major\\IntelliOS\\Restoration_engine\\browser_ports.json"
 USE_HANDLE = True  # Not implemented, placeholder
 
 def get_devtools_tabs(base_url):
     try:
         resp = requests.get(f"{base_url}/json", timeout=10)
         tabs = resp.json()
-        by_window = {}
+        formatted_tabs = []
         for tab in tabs:
-            wid = tab.get("id")
-            if wid not in by_window:
-                by_window[wid] = []
-            by_window[wid].append({
-                "url": tab.get("url"),
-                "title": tab.get("title"),
-                "description": tab.get("description")
-            })
-        windows = []
-        for wid, tabs in by_window.items():
-            windows.append({
-                "windowId": wid,
-                "tabs": tabs
-            })
-        return windows
+            if (tab.get('url') and 
+                any(tab['url'].startswith(prefix) for prefix in ['https://', 'http://', 'file://', 'chrome://', 'edge://']) and
+                not any(tab.get('title', '').startswith(prefix) for prefix in ['https://', 'http://']) and tab.get('type') == 'page'):
+                formatted_tabs.append({
+                    "url": tab.get("url"),
+                    "title": tab.get("title"),
+                    "description": tab.get("description", "")
+                })
+        return formatted_tabs
     except Exception:
         return []
 
@@ -125,33 +119,66 @@ def get_file_args_from_commandline(cmd):
             files.append(norm)
     return list(set(files))
 
-def get_main_window_title(pid):
-    def callback(hwnd, titles):
+def get_main_window_info(pid):
+    def callback(hwnd, window_info):
         try:
             _, found_pid = win32process.GetWindowThreadProcessId(hwnd)
             if found_pid == pid and win32gui.IsWindowVisible(hwnd):
-                titles.append(win32gui.GetWindowText(hwnd))
+                # Get window title
+                title = win32gui.GetWindowText(hwnd)
+                
+                # Get window rect (position and size)
+                rect = win32gui.GetWindowRect(hwnd)
+                left, top, right, bottom = rect
+                
+                # Get window state
+                style = win32gui.GetWindowLong(hwnd, -16)  # GWL_STYLE
+                state = "minimized" if style & 0x20000000 else "maximized" if style & 0x01000000 else "normal"
+                
+                window_info.append({
+                    "title": title,
+                    "position": {
+                        "x": left,
+                        "y": top
+                    },
+                    "size": {
+                        "width": right - left,
+                        "height": bottom - top
+                    },
+                    "state": state
+                })
         except Exception:
             pass
         return True
-    titles = []
-    win32gui.EnumWindows(lambda hwnd, _: callback(hwnd, titles), None)
-    return titles[0] if titles else None
+    
+    window_info = []
+    win32gui.EnumWindows(lambda hwnd, _: callback(hwnd, window_info), None)
+    return window_info[0] if window_info else None
 
 whitelist = [
     "WINWORD.EXE","EXCEL.EXE","POWERPNT.EXE","VISIO.EXE", "MSPUB.EXE","MSACCESS.EXE","WINPROJ.EXE","ONENOTE.EXE",
     "notepad.exe","notepad++.exe",
     "code.exe","Code.exe","devenv.exe","sublime_text.exe","Acrobat.exe","AcroRd32.exe",
-    "vlc.exe","obs64.exe","photoshop.exe","idea64.exe","pycharm64.exe","chrome.exe","msedge.exe","firefox.exe"
+    "vlc.exe","obs64.exe","photoshop.exe","idea64.exe","pycharm64.exe"
 ]
+
+office_apps = {
+    "WINWORD.EXE": get_word_docs,
+    "EXCEL.EXE": get_excel_books,
+    "POWERPNT.EXE": get_powerpoint_pres,
+    "VISIO.EXE": get_visio_drawings,
+    "MSPUB.EXE": get_publisher_docs,
+    "MSACCESS.EXE": get_access_dbs,
+    "WINPROJ.EXE": get_project_files,
+    "ONENOTE.EXE": get_onenote_files
+}
 
 apps = []
 for proc in psutil.process_iter(['pid', 'name', 'exe', 'cmdline']):
     name = proc.info['name']
     if name not in whitelist:
         continue
-    if name in ["chrome.exe", "msedge.exe", "firefox.exe"]:
-        continue
+    
     # files = []
     # cmdline = ' '.join(proc.info['cmdline']) if proc.info['cmdline'] else ''
     # files += get_file_args_from_commandline(cmdline)
@@ -167,31 +194,17 @@ for proc in psutil.process_iter(['pid', 'name', 'exe', 'cmdline']):
     #     "windowInfo": main_window
     # })
 
-office_apps = {
-    "WINWORD.EXE": get_word_docs,
-    "EXCEL.EXE": get_excel_books,
-    "POWERPNT.EXE": get_powerpoint_pres,
-    "VISIO.EXE": get_visio_drawings,
-    "MSPUB.EXE": get_publisher_docs,
-    "MSACCESS.EXE": get_access_dbs,
-    "WINPROJ.EXE": get_project_files,
-    "ONENOTE.EXE": get_onenote_files
-}
-
-for app, func in office_apps.items():
-    if any(a["name"] == app for a in apps):
-        continue
-    files = func()
-    if files:
-        exe_path = next((proc.info['exe'] for proc in psutil.process_iter(['name', 'exe']) if proc.info['name'] == app), None)
-        apps.append({
-            "name": app,
-            "pid": None,
-            "exe": exe_path,
-            "cmdline": None,
-            "files": list(set(files)),
-            "windowInfo": None
-        })
+    if name in office_apps.keys():
+        files = office_apps[name]()
+        if files:
+            apps.append({
+                "name": name,
+                "pid": proc.info['pid'],
+                "exe": proc.info['exe'],
+                "cmdline": ' '.join(proc.info['cmdline']) if proc.info['cmdline'] else '',
+                "files": list(set(files)),
+                "windowInfo": get_main_window_info(proc.info['pid'])
+            })
 
 # Office COM
 # word_docs = get_word_docs()
@@ -238,40 +251,38 @@ def get_browser_states():
 
     browsers = []
     
-    # Process Chrome instances
-    if "chrome" in browser_data:
-        chrome_windows = []
-        for profile_name, profile_data in browser_data["chrome"]["profiles"].items():
-            for instance in profile_data["instances"]:
-                if instance["status"] == "active":
-                    wins = get_devtools_tabs(f"http://localhost:{instance['port']}")
-                    if wins:
-                        for win in wins:
-                            win["debuggingPort"] = int(instance["port"])
-                        chrome_windows.extend(wins)
+    # Process all browser types
+    for browser_name, browser_info in browser_data.items():
+        browser_windows = []
+        browser_exe = browser_info.get("exe")
         
-        if chrome_windows:
-            browsers.append({
-                "browser": "chrome",
-                "windows": chrome_windows
-            })
-    
-    # Process Edge instances
-    if "edge" in browser_data:
-        edge_windows = []
-        for profile_name, profile_data in browser_data["edge"]["profiles"].items():
-            for instance in profile_data["instances"]:
-                if instance["status"] == "active":
-                    wins = get_devtools_tabs(f"http://localhost:{instance['port']}")
-                    if wins:
-                        for win in wins:
-                            win["debuggingPort"] = int(instance["port"])
-                        edge_windows.extend(wins)
+        # Process all profiles for this browser
+        for profile_info in browser_info.get("profiles", []):
+            # Handle both profile name formats
+            profile_path = profile_info.get("profile") or profile_info.get("user_data_dir")
+            if not profile_path:
+                continue
+            
+            # Process all instances of this profile
+            for instance in profile_info.get("instances", []):
+                if instance.get("status") == "active":
+                    port = instance["port"]
+                    tabs = get_devtools_tabs(f"http://localhost:{port}")
+                    
+                    if tabs:
+                        window = {
+                            "profile": profile_path,
+                            "debuggingPort": int(port),
+                            "tabs": tabs
+                        }
+                        browser_windows.append(window)
         
-        if edge_windows:
+        # Add browser to list if it has active windows
+        if browser_windows:
             browsers.append({
-                "browser": "edge",
-                "windows": edge_windows
+                "browser": browser_name,  
+                "exe": browser_exe,
+                "windows": browser_windows
             })
     
     return browsers

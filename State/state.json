@@ -62,11 +62,11 @@
                             "x": 100,
                             "y": 200
                         },
-                    "size": {
-                        "width": 1024,
-                        "height": 768
-                    },
-                    "state": "normal"
+                        "size": {
+                            "width": 1024,
+                            "height": 768
+                        },
+                        "state": "normal"
                     }
                 },
                 {

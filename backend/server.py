@@ -13,6 +13,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 from dotenv import load_dotenv
+from State_capturing_engine.browser_capture import capture_browser_states
+from State_capturing_engine.app_capture import capture_app_states
+from Restoration_engine.browser_restore import restore_browsers
+from Restoration_engine.app_restore import restore_apps
 
 # Load environment variables
 load_dotenv()
@@ -34,6 +38,8 @@ from main import process_logs
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Restoration_engine"))
 from browser_restore import restore_browsers
 from app_restore import restore_apps
+from browser_capture import capture_browser_states
+from app_capture import capture_app_states
 
 # Set up the logger
 logger = logging.getLogger(__name__)
@@ -89,6 +95,16 @@ class RestoreResponse(BaseModel):
     status: str
     message: str
     details: Optional[Dict[str, bool]] = None
+
+class CaptureRequest(BaseModel):
+    state_file_path: str
+    browser_ports_file: str
+
+class CaptureResponse(BaseModel):
+    status: str
+    message: str
+    saved_at: str
+    file_path: str
 
 # In-memory queue for background processed logs
 processed_logs_queue = []
@@ -305,7 +321,87 @@ async def get_vector_db_stats():
         raise HTTPException(status_code=500, detail=f"Error getting vector database stats: {str(e)}")
 
 # State Restoration endpoints
-@app.post("/api/restore", response_model=RestoreResponse, tags=["State Restoration"])
+@app.post("/api/capture", response_model=CaptureResponse, tags=["State Management"])
+async def capture_state(request: CaptureRequest):
+    """
+    Capture current system state and save it to a file
+    
+    Args:
+        request: CaptureRequest containing paths for state.json and browser_ports.json
+        
+    Returns:
+        CaptureResponse with status and message
+    """
+    try:
+        # Ensure output directory exists
+        os.makedirs(os.path.dirname(request.state_file_path), exist_ok=True)
+
+        if not os.path.exists(request.browser_ports_file):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Browser ports file not found: {request.browser_ports_file}"
+            )
+        
+        # Read browser ports file
+        browser_ports_data = {}
+        try:
+            with open(request.browser_ports_file, 'r', encoding='utf-8') as f:
+                browser_ports_data = json.load(f)
+        except Exception as e:
+            logger.error(f"Error reading browser ports file: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error reading browser ports file: {str(e)}"
+            )
+
+        browsers = []
+        apps = []
+        #Capture browser states
+        try:
+            browsers = capture_browser_states(browser_ports_data)
+        except Exception as e:
+            logger.error(f"Error capturing browser states: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error capturing browser states: {str(e)}"
+            )
+        # Capture app states
+        try:
+            apps = capture_app_states()
+        except Exception as e:
+            logger.error(f"Error capturing app states: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error capturing app states: {str(e)}"
+            )
+        
+        # Create state object
+        state = {
+            "saved_at": datetime.now().isoformat(),
+            "user": os.environ.get("USERNAME", ""),
+            "browsers": browsers,
+            "apps": apps
+        }
+        
+        # Save state to file
+        with open(request.state_file_path, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2, ensure_ascii=False)
+            
+        return CaptureResponse(
+            status="success",
+            message="State captured successfully",
+            saved_at=state["saved_at"],
+            file_path=request.state_file_path
+        )
+            
+    except Exception as e:
+        logger.error(f"Error capturing state: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error capturing state: {str(e)}"
+        )
+
+@app.post("/api/restore", response_model=RestoreResponse, tags=["State Management"])
 async def restore_state(request: RestoreRequest):
     """
     Restore system state from a state file
@@ -327,6 +423,7 @@ async def restore_state(request: RestoreRequest):
             )
 
         # Read state file
+        state = {}
         try:
             with open(request.state_file_path, 'r', encoding='utf-8') as f:
                 state = json.load(f)
