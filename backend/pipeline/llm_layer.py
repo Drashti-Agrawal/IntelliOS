@@ -4,6 +4,7 @@ import sys
 import time
 import logging
 import httpx
+import json
 from dotenv import load_dotenv
 
 # Add parent directory to path for imports
@@ -30,8 +31,9 @@ def _get_llm_client():
             logger.warning("GROQ_API_KEY not found in environment variables. LLM parsing will be disabled.")
             return None, None
             
-        client = instructor.patch(groq.Groq(api_key=api_key))
-        return client, ActivityLog
+        raw_client = groq.Groq(api_key=api_key)
+        client = instructor.patch(raw_client, mode=instructor.Mode.JSON)
+        return client, raw_client, ActivityLog
     except ImportError as e:
         logger.warning(f"LLM dependencies not available: {e}. LLM parsing will be disabled.")
         return None, None
@@ -51,7 +53,7 @@ def parse_with_llm(provider: str, message: str, max_retries=3, base_delay=5):
         base_delay: Base delay in seconds for exponential backoff
     """
     # Get LLM client lazily
-    client, ActivityLog = _get_llm_client()
+    client, raw_client, ActivityLog = _get_llm_client()
     
     if client is None or ActivityLog is None:
         logger.warning("LLM client not available. Skipping LLM parsing.")
@@ -61,8 +63,10 @@ def parse_with_llm(provider: str, message: str, max_retries=3, base_delay=5):
     while retry_count <= max_retries:
         try:
             logger.info(f"Attempting LLM parsing for provider: '{provider}'")
+            # Allow overriding the model via environment; default to a supported Groq model
+            model_name = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
             response = client.chat.completions.create(
-                model="llama3-70b-8192",  # Using Llama 3 70B model via Groq
+                model=model_name,  # Supported Groq model (configurable via GROQ_MODEL)
                 response_model=ActivityLog,
                 messages=[
                     {"role": "system", "content": "You are a world-class log parsing expert. Your task is to extract structured data from a raw log entry into the provided schema. Do not invent any information that is not present in the log. Categorize the event type accurately based on the provider and content."},
@@ -86,5 +90,45 @@ def parse_with_llm(provider: str, message: str, max_retries=3, base_delay=5):
                 logger.error(f"LLM parsing failed with HTTP error: {e}")
                 return None
         except Exception as e:
-            logger.error(f"LLM parsing failed: {e}")
-            return None
+            # Some Groq models may not support tool/function-calling. Fallback to raw JSON parsing.
+            error_text = str(e)
+            if any(term in error_text for term in ["tool_use_failed", "Failed to call a function", "function_call"]):
+                try:
+                    logger.info("Falling back to raw JSON schema parsing without tools...")
+                    model_name = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+                    fallback_messages = [
+                        {
+                            "role": "system",
+                            "content": (
+                                "You extract structured data from Windows event logs. \n"
+                                "Respond ONLY with strict JSON matching this schema keys: "
+                                "{event_type, event_subtype, app_name, file_path, status, operation_code, summary}.\n"
+                                "- event_type must be one of: file_interaction, application_lifecycle, system_event, application_crash, service_event, power_event, dcom_event, file_system_event, unknown.\n"
+                                "- Use null for unknown optional fields.\n"
+                                "Do not include code fences or extra text."
+                            ),
+                        },
+                        {
+                            "role": "user",
+                            "content": (
+                                f"Provider: {provider}\n\nLog entry: {message}\n\n"
+                                "Return JSON only."
+                            ),
+                        },
+                    ]
+                    raw_response = raw_client.chat.completions.create(
+                        model=model_name,
+                        temperature=0,
+                        messages=fallback_messages,
+                    )
+                    content = raw_response.choices[0].message["content"]
+                    data = json.loads(content)
+                    validated = ActivityLog(**data)
+                    logger.info(f"LLM parsing successful via fallback for provider: '{provider}'")
+                    return validated.dict()
+                except Exception as fallback_error:
+                    logger.error(f"LLM fallback parsing failed: {fallback_error}")
+                    return None
+            else:
+                logger.error(f"LLM parsing failed: {e}")
+                return None
