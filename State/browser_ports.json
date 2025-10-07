@@ -3,7 +3,7 @@
         "exe": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
         "profiles": [
             {
-                "profile": "work_profile",
+                "profile": "C:\\ChromeDebugProfile1",
                 "instances": [
                     {
                         "port": "9222",
@@ -23,7 +23,7 @@
                 ]
             },
             {
-                "user_data_dir": "personal_profile",
+                "profile": "C:\\ChromeDebugProfile2",
                 "instances": [
                     {
                         "port": "9225",
@@ -41,9 +41,9 @@
     },
     "msedge": {
         "exe": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-        "profiles": {
-            "default_profile": {
-                "user_data_dir": "default_profile",
+        "profiles": [
+            {
+                "profile": "C:\\EdgeDebugProfile1",
                 "instances": [
                     {
                         "port": "9227",
@@ -52,8 +52,8 @@
                     }
                 ]
             },
-            "testing_profile": {
-                "user_data_dir": "testing_profile",
+            {
+                "profile": "Edge",
                 "instances": [
                     {
                         "port": "9228",
@@ -67,6 +67,6 @@
                     }
                 ]
             }
-        }
+        ]
     }
 }

@@ -13,10 +13,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 from dotenv import load_dotenv
-from State_capturing_engine.browser_capture import capture_browser_states
-from State_capturing_engine.app_capture import capture_app_states
-from Restoration_engine.browser_restore import restore_browsers
-from Restoration_engine.app_restore import restore_apps
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'State_capturing_engine')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Restoration_engine')))
+from browser_capture import capture_browser_states
+from app_capture import capture_app_states
+from browser_restore import restore_browsers
+from app_restore import restore_apps
 
 # Load environment variables
 load_dotenv()
@@ -87,18 +90,12 @@ class TopicListResponse(BaseModel):
     topics: Dict[str, str]
     status: str
 
-# State restoration models
-class RestoreRequest(BaseModel):
-    state_file_path: str
 
 class RestoreResponse(BaseModel):
     status: str
     message: str
     details: Optional[Dict[str, bool]] = None
 
-class CaptureRequest(BaseModel):
-    state_file_path: str
-    browser_ports_file: str
 
 class CaptureResponse(BaseModel):
     status: str
@@ -322,7 +319,7 @@ async def get_vector_db_stats():
 
 # State Restoration endpoints
 @app.post("/api/capture", response_model=CaptureResponse, tags=["State Management"])
-async def capture_state(request: CaptureRequest):
+async def capture_state():
     """
     Capture current system state and save it to a file
     
@@ -333,19 +330,21 @@ async def capture_state(request: CaptureRequest):
         CaptureResponse with status and message
     """
     try:
+        state_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..\\State\\state.json"))
+        browser_ports_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..\\State\\browser_ports.json"))
         # Ensure output directory exists
-        os.makedirs(os.path.dirname(request.state_file_path), exist_ok=True)
+        os.makedirs(os.path.dirname(state_file_path), exist_ok=True)
 
-        if not os.path.exists(request.browser_ports_file):
+        if not os.path.exists(browser_ports_file_path):
             raise HTTPException(
                 status_code=404,
-                detail=f"Browser ports file not found: {request.browser_ports_file}"
+                detail=f"Browser ports file not found: {browser_ports_file_path}"
             )
         
         # Read browser ports file
         browser_ports_data = {}
         try:
-            with open(request.browser_ports_file, 'r', encoding='utf-8') as f:
+            with open(browser_ports_file_path, 'r', encoding='utf-8') as f:
                 browser_ports_data = json.load(f)
         except Exception as e:
             logger.error(f"Error reading browser ports file: {e}")
@@ -384,14 +383,14 @@ async def capture_state(request: CaptureRequest):
         }
         
         # Save state to file
-        with open(request.state_file_path, "w", encoding="utf-8") as f:
+        with open(state_file_path, "w", encoding="utf-8") as f:
             json.dump(state, f, indent=2, ensure_ascii=False)
             
         return CaptureResponse(
             status="success",
             message="State captured successfully",
             saved_at=state["saved_at"],
-            file_path=request.state_file_path
+            file_path=state_file_path
         )
             
     except Exception as e:
@@ -402,7 +401,7 @@ async def capture_state(request: CaptureRequest):
         )
 
 @app.post("/api/restore", response_model=RestoreResponse, tags=["State Management"])
-async def restore_state(request: RestoreRequest):
+async def restore_state():
     """
     Restore system state from a state file
     
@@ -416,16 +415,18 @@ async def restore_state(request: RestoreRequest):
         HTTPException: If there are any errors during the restoration process
     """
     try:
-        if not os.path.exists(request.state_file_path):
+        state_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..\\State\\state.json"))
+
+        if not os.path.exists(state_file_path):
             raise HTTPException(
                 status_code=404,
-                detail=f"State file not found: {request.state_file_path}"
+                detail=f"State file not found: {state_file_path}"
             )
 
         # Read state file
         state = {}
         try:
-            with open(request.state_file_path, 'r', encoding='utf-8') as f:
+            with open(state_file_path, 'r', encoding='utf-8') as f:
                 state = json.load(f)
         except Exception as e:
             logger.error(f"Error reading state file: {e}")
