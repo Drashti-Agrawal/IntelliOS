@@ -34,12 +34,7 @@ from topics import TOPICS
 # Import the process_logs function from main.py
 from main import process_logs
 
-# Import restoration modules
-sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Restoration_engine"))
-from browser_restore import restore_browsers
-from app_restore import restore_apps
-from browser_capture import capture_browser_states
-from app_capture import capture_app_states
+# Note: capture and restore modules imported from packages above (State_capturing_engine, Restoration_engine)
 
 # Set up the logger
 logger = logging.getLogger(__name__)
@@ -354,9 +349,8 @@ async def capture_state(request: CaptureRequest):
                 detail=f"Error reading browser ports file: {str(e)}"
             )
 
+        # Capture browser states
         browsers = []
-        apps = []
-        #Capture browser states
         try:
             browsers = capture_browser_states(browser_ports_data)
         except Exception as e:
@@ -365,9 +359,21 @@ async def capture_state(request: CaptureRequest):
                 status_code=500,
                 detail=f"Error capturing browser states: {str(e)}"
             )
-        # Capture app states
+
+        # Capture app states and normalize to state schema (use 'items')
+        apps = []
         try:
-            apps = capture_app_states()
+            raw_apps = capture_app_states()
+            for a in (raw_apps or []):
+                items = a.get('files') or a.get('items') or []
+                apps.append({
+                    'name': a.get('name'),
+                    'pid': a.get('pid'),
+                    'exe': a.get('exe'),
+                    'cmdline': a.get('cmdline'),
+                    'items': items,
+                    'windowInfo': a.get('windowInfo')
+                })
         except Exception as e:
             logger.error(f"Error capturing app states: {e}")
             raise HTTPException(

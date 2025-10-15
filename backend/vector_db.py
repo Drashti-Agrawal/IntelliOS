@@ -9,6 +9,7 @@ from typing import List, Dict, Any, Tuple
 import json
 from topics import TOPICS, TOPIC_EXAMPLES
 from dotenv import load_dotenv
+import argparse
 
 # Load environment variables
 load_dotenv()
@@ -402,7 +403,7 @@ class VectorDBManager:
         except Exception as e:
             logger.error(f"Failed to query vector database: {e}")
             return []
-    
+
     def get_stats(self) -> Dict[str, Any]:
         """
         Get statistics about the vector database.
@@ -440,3 +441,36 @@ class VectorDBManager:
         except Exception as e:
             logger.error(f"Failed to clear collection: {e}")
             return False
+
+
+def _cli():
+    parser = argparse.ArgumentParser(prog='vector_db.py', description='Vector DB utilities')
+    parser.add_argument('--feed-topics', action='store_true', help='Initialize topics collection and load embeddings')
+    parser.add_argument('--stats', action='store_true', help='Print collection stats')
+    args = parser.parse_args()
+
+    if args.feed_topics or args.stats:
+        mgr = VectorDBManager()
+        out = {}
+        if args.feed_topics:
+            try:
+                mgr._initialize_topics()
+                mgr._load_topic_embeddings()
+                out['feed_topics'] = 'ok'
+            except Exception as e:
+                out['feed_topics'] = f'error: {e}'
+        if args.stats:
+            try:
+                out['stats'] = {
+                    'topics_count': mgr.topics_collection.count(),
+                    'logs_count': mgr.collection.count()
+                }
+            except Exception as e:
+                out['stats'] = f'error: {e}'
+
+        print(json.dumps(out, indent=2))
+
+
+if __name__ == '__main__':
+    _cli()
+    
