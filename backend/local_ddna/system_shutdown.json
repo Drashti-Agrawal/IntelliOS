@@ -1,1 +1,54 @@
-[]
+[
+  {
+    "event_type": "app_state",
+    "summary": "App Code.exe - 1 windows, 0 items, 0 files",
+    "saved_at": "20251015_142820",
+    "timestamp": "20251015_142820",
+    "app_name": "Code.exe",
+    "exe_path": "C:\\Users\\Hp\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe",
+    "pid": 13412,
+    "window_count": 1,
+    "captured_at": "2025-10-15T14:27:40.131843",
+    "topic_score": 0.3151,
+    "topic_description": "System shutdown, restart, and power-off events"
+  },
+  {
+    "event_type": "app_state",
+    "summary": "App Code.exe - 1 windows, 0 items, 0 files",
+    "saved_at": "20251015_142820",
+    "timestamp": "20251015_142820",
+    "app_name": "Code.exe",
+    "exe_path": "C:\\Users\\Hp\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe",
+    "pid": 13412,
+    "window_count": 1,
+    "captured_at": "2025-10-15T14:27:40.131843",
+    "topic_score": 0.3151,
+    "topic_description": "System shutdown, restart, and power-off events"
+  },
+  {
+    "event_type": "app_state",
+    "summary": "App Code.exe - 1 windows, 0 items, 0 files",
+    "saved_at": "20251015_144002",
+    "timestamp": "20251015_144002",
+    "app_name": "Code.exe",
+    "exe_path": null,
+    "pid": null,
+    "window_count": null,
+    "captured_at": null,
+    "topic_score": 0.3151,
+    "topic_description": "System shutdown, restart, and power-off events"
+  },
+  {
+    "event_type": "app_state",
+    "summary": "App Code.exe - 1 windows, 0 items, 0 files",
+    "saved_at": "20251015_142820",
+    "timestamp": "20251015_142820",
+    "app_name": "Code.exe",
+    "exe_path": "C:\\Users\\Hp\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe",
+    "pid": 13412,
+    "window_count": 1,
+    "captured_at": "2025-10-15T14:27:40.131843",
+    "topic_score": 0.3151,
+    "topic_description": "System shutdown, restart, and power-off events"
+  }
+]

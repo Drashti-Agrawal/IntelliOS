@@ -2,7 +2,10 @@
 import streamlit as st
 import json
 import os
+import sys
 import datetime
+import time
+import threading
 from local_ddna_helper import (
     get_local_ddna_topics,
     get_local_ddna_topic,
@@ -11,11 +14,56 @@ from local_ddna_helper import (
     search_local_ddna
 )
 
+# Setup paths
+DEMO_UI_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(DEMO_UI_DIR)
+BACKEND_DIR = os.path.join(PROJECT_ROOT, 'backend')
+FLOW_DIR = os.path.join(BACKEND_DIR, 'flow')
+RESTORATION_DIR = os.path.join(PROJECT_ROOT, 'Restoration_engine')
+
 # Import restore_state if available
+if RESTORATION_DIR not in sys.path and os.path.exists(RESTORATION_DIR):
+    sys.path.insert(0, RESTORATION_DIR)
+
+restore_state = None
+restore_available = False
+
+# Try multiple restore imports
 try:
     from restore_state_mac import restore_state
+    restore_available = True
+    print("✅ Loaded restore_state_mac")
 except ImportError:
-    restore_state = None
+    try:
+        from app_restore import restore_applications
+        from browser_restore import restore_browsers
+        restore_available = True
+        
+        # Create a combined restore function
+        def restore_state():
+            restore_applications()
+            restore_browsers()
+        
+        print("✅ Loaded app_restore and browser_restore")
+    except ImportError:
+        print("⚠️ No restore modules available")
+
+# Import flow.py for continuous capture
+
+# Add all necessary paths
+for path in [BACKEND_DIR, FLOW_DIR, PROJECT_ROOT]:
+    if path not in sys.path and os.path.exists(path):
+        sys.path.insert(0, path)
+
+try:
+    from flow import handle_latest_logs
+    FLOW_AVAILABLE = True
+    print(f"✅ Flow module loaded successfully from: {FLOW_DIR}")
+except ImportError as e:
+    FLOW_AVAILABLE = False
+    handle_latest_logs = None
+    print(f"⚠️ Flow module not available: {e}")
+    print(f"   Tried path: {FLOW_DIR}")
 
 # Load workspaces from JSON file
 WORKSPACES_PATH = os.path.join(os.path.dirname(__file__), "workspaces.json")
@@ -27,23 +75,171 @@ else:
 
 lastRestored = next((ws for ws in workspaces if ws.get('lastRestored')), None)
 aiSuggestion = "Based on your usage pattern, I recommend creating a 'Research Mode' workspace for your frequent article reading sessions."
-username = "Drashti"
+username = "Jatan"
+
+# Initialize session state for continuous capture
+if 'capture_running' not in st.session_state:
+    st.session_state.capture_running = False
+if 'capture_count' not in st.session_state:
+    st.session_state.capture_count = 0
+if 'last_capture_time' not in st.session_state:
+    st.session_state.last_capture_time = None
+if 'capture_thread' not in st.session_state:
+    st.session_state.capture_thread = None
+if 'recent_captures' not in st.session_state:
+    st.session_state.recent_captures = []
+if 'last_capture_result' not in st.session_state:
+    st.session_state.last_capture_result = None
+
+def run_continuous_capture(delay=5):
+    """Run capture continuously in background"""
+    while st.session_state.capture_running:
+        try:
+            if FLOW_AVAILABLE and handle_latest_logs:
+                result = handle_latest_logs(
+                    workspace_name=f'live_capture_{st.session_state.capture_count}',
+                    run_capture_if_missing=True
+                )
+                st.session_state.capture_count += 1
+                st.session_state.last_capture_time = datetime.datetime.now().strftime('%H:%M:%S')
+                
+                # Store the result for display
+                st.session_state.last_capture_result = result
+                
+                # Extract logs with scores for recent captures list
+                if result.get('status') == 'success' and result.get('logs'):
+                    logs = result.get('logs', [])
+                    capture_summary = {
+                        'time': st.session_state.last_capture_time,
+                        'count': st.session_state.capture_count,
+                        'n_logs': len(logs),
+                        'logs_with_scores': [
+                            {
+                                'event_type': log.get('event_type', 'Unknown'),
+                                'summary': log.get('summary', 'No summary')[:60] + '...' if len(log.get('summary', '')) > 60 else log.get('summary', 'No summary'),
+                                'score': log.get('similarity', 0.0),
+                                'topics': [t.get('topic') for t in log.get('topic_matches', [])[:2]]  # Top 2 topics
+                            }
+                            for log in logs[:5]  # Only keep last 5 logs
+                        ]
+                    }
+                    # Keep only last 10 captures
+                    st.session_state.recent_captures.insert(0, capture_summary)
+                    if len(st.session_state.recent_captures) > 10:
+                        st.session_state.recent_captures = st.session_state.recent_captures[:10]
+            time.sleep(delay)
+        except Exception as e:
+            print(f"Capture error: {e}")
+            break
 
 st.set_page_config(page_title="Adaptive Workspace Dashboard", layout="wide")
 
 # Top Bar
-st.markdown(f"""
-<div style='background: linear-gradient(to right, #2d2d44, #3f8dfc); padding: 1.5rem; border-radius: 1rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;'>
-  <div style='display: flex; align-items: center; gap: 1rem;'>
-    <span style='font-size:2rem; color:#b086f2;'>🧠</span>
-    <span style='font-size:1.5rem; font-weight:bold; background: linear-gradient(to right, #b086f2, #3f8dfc); -webkit-background-clip: text; color: transparent;'>Adaptive Workspace</span>
-  </div>
-  <div style='display: flex; align-items: center; gap: 1rem;'>
-    <span style='color:#ccc;'>Welcome back, {username}</span>
-    <button style='background: linear-gradient(to right, #3f8dfc, #00ffb3); color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none;'>Real-Time Monitoring</button>
-  </div>
-</div>
-""", unsafe_allow_html=True)
+col_left, col_right = st.columns([3, 1])
+
+with col_left:
+    st.markdown(f"""
+    <div style='background: linear-gradient(to right, #2d2d44, #3f8dfc); padding: 1.5rem; border-radius: 1rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;'>
+      <div style='display: flex; align-items: center; gap: 1rem;'>
+        <span style='font-size:2rem; color:#b086f2;'>🧠</span>
+        <span style='font-size:1.5rem; font-weight:bold; background: linear-gradient(to right, #b086f2, #3f8dfc); -webkit-background-clip: text; color: transparent;'>Adaptive Workspace</span>
+      </div>
+      <div style='display: flex; align-items: center; gap: 1rem;'>
+        <span style='color:#ccc;'>Welcome back, {username}</span>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col_right:
+    st.markdown("### 🎬 Live Capture")
+    
+    if FLOW_AVAILABLE:
+        # Capture status indicator
+        if st.session_state.capture_running:
+            st.markdown("""
+            <div style='background: linear-gradient(to right, #00ff88, #00d4aa); padding: 0.5rem; border-radius: 0.5rem; text-align: center; margin-bottom: 0.5rem;'>
+                <span style='color: white; font-weight: bold;'>🔴 LIVE</span>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div style='background: linear-gradient(to right, #555, #777); padding: 0.5rem; border-radius: 0.5rem; text-align: center; margin-bottom: 0.5rem;'>
+                <span style='color: white; font-weight: bold;'>⚫ STOPPED</span>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Control buttons
+        col_btn1, col_btn2 = st.columns(2)
+        
+        with col_btn1:
+            if st.button("▶️ Start", disabled=st.session_state.capture_running, use_container_width=True, key="start_capture"):
+                st.session_state.capture_running = True
+                st.session_state.capture_count = 0
+                thread = threading.Thread(target=run_continuous_capture, args=(5,), daemon=True)
+                thread.start()
+                st.session_state.capture_thread = thread
+                st.rerun()
+        
+        with col_btn2:
+            if st.button("⏹️ Stop", disabled=not st.session_state.capture_running, use_container_width=True, key="stop_capture"):
+                st.session_state.capture_running = False
+                st.rerun()
+        
+        # Manual capture button
+        if st.button("📸 Capture Once", use_container_width=True, key="manual_capture", 
+                    type="primary", disabled=st.session_state.capture_running):
+            with st.spinner("Capturing..."):
+                try:
+                    result = handle_latest_logs(
+                        workspace_name=f'manual_capture_{int(time.time())}',
+                        run_capture_if_missing=True
+                    )
+                    if result.get('status') == 'success':
+                        st.success(f"✅ Captured {result.get('n_logs', 0)} logs!")
+                        st.session_state.capture_count += 1
+                        st.session_state.last_capture_time = datetime.datetime.now().strftime('%H:%M:%S')
+                        st.session_state.last_capture_result = result
+                        
+                        # Store logs with scores
+                        if result.get('logs'):
+                            logs = result.get('logs', [])
+                            capture_summary = {
+                                'time': st.session_state.last_capture_time,
+                                'count': st.session_state.capture_count,
+                                'n_logs': len(logs),
+                                'logs_with_scores': [
+                                    {
+                                        'event_type': log.get('event_type', 'Unknown'),
+                                        'summary': log.get('summary', 'No summary')[:60] + '...' if len(log.get('summary', '')) > 60 else log.get('summary', 'No summary'),
+                                        'score': log.get('similarity', 0.0),
+                                        'topics': [t.get('topic') for t in log.get('topic_matches', [])[:2]]
+                                    }
+                                    for log in logs[:5]
+                                ]
+                            }
+                            st.session_state.recent_captures.insert(0, capture_summary)
+                            if len(st.session_state.recent_captures) > 10:
+                                st.session_state.recent_captures = st.session_state.recent_captures[:10]
+                        
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        st.error(f"❌ Capture failed: {result.get('message', 'Unknown error')}")
+                except Exception as e:
+                    st.error(f"❌ Error: {str(e)}")
+        
+        # Stats
+        if st.session_state.capture_count > 0:
+            st.metric("Total Captures", st.session_state.capture_count)
+            if st.session_state.last_capture_time:
+                st.caption(f"⏰ Last: {st.session_state.last_capture_time}")
+    else:
+        st.error("⚠️ Flow module not available")
+        st.caption(f"Flow directory: {FLOW_DIR}")
+        st.caption(f"Exists: {os.path.exists(FLOW_DIR)}")
+        if st.button("🔄 Retry Import", key="retry_import"):
+            st.rerun()
+
 
 # Dashboard Overview
 col1, col2 = st.columns(2)
@@ -63,6 +259,113 @@ with col2:
       <div style='color:#eee; margin-top:0.5rem;'>{aiSuggestion}</div>
     </div>
     """, unsafe_allow_html=True)
+
+st.markdown("---")
+
+# Recent Captures Window - Show latest capture output
+if FLOW_AVAILABLE and st.session_state.recent_captures:
+    st.markdown("### 📊 Recent Capture Activity")
+    
+    # Show the most recent capture in detail
+    latest = st.session_state.recent_captures[0]
+    
+    st.markdown(f"""
+    <div style='
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    '>
+        <div style='display: flex; justify-content: space-between; align-items: center;'>
+            <span style='color: white; font-size: 1.2rem; font-weight: bold;'>
+                Capture #{latest['count']} at {latest['time']}
+            </span>
+            <span style='
+                background: rgba(255, 255, 255, 0.2);
+                padding: 0.25rem 0.75rem;
+                border-radius: 20px;
+                color: white;
+                font-weight: bold;
+            '>
+                {latest['n_logs']} logs
+            </span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Display logs with their matching scores
+    for idx, log_info in enumerate(latest['logs_with_scores']):
+        score = log_info['score']
+        
+        # Color based on score
+        if score >= 0.75:
+            color = "#4ade80"  # Green
+            score_label = "High Match"
+        elif score >= 0.5:
+            color = "#fbbf24"  # Yellow
+            score_label = "Medium Match"
+        else:
+            color = "#94a3b8"  # Gray
+            score_label = "Low Match"
+        
+        # Topics display
+        topics_str = ", ".join(log_info['topics']) if log_info['topics'] else "No topics"
+        
+        st.markdown(f"""
+        <div style='
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-left: 4px solid {color};
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+        '>
+            <div style='display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;'>
+                <div style='flex: 1;'>
+                    <div style='color: #1e293b; font-weight: 600; margin-bottom: 0.25rem;'>
+                        {log_info['event_type']}
+                    </div>
+                    <div style='color: #475569; font-size: 0.9rem;'>
+                        {log_info['summary']}
+                    </div>
+                    <div style='color: #64748b; font-size: 0.8rem; margin-top: 0.25rem;'>
+                        🏷️ {topics_str}
+                    </div>
+                </div>
+                <div style='
+                    background: {color};
+                    color: white;
+                    padding: 0.25rem 0.75rem;
+                    border-radius: 20px;
+                    font-size: 0.85rem;
+                    font-weight: bold;
+                    white-space: nowrap;
+                    margin-left: 1rem;
+                '>
+                    {score:.2f} - {score_label}
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Show history in an expander
+    if len(st.session_state.recent_captures) > 1:
+        with st.expander(f"📜 View Previous Captures ({len(st.session_state.recent_captures) - 1} more)", expanded=False):
+            for capture in st.session_state.recent_captures[1:]:
+                st.markdown(f"""
+                <div style='
+                    background: #f8fafc;
+                    border-radius: 6px;
+                    padding: 0.5rem;
+                    margin-bottom: 0.5rem;
+                '>
+                    <div style='color: #1e293b; font-weight: 600;'>
+                        Capture #{capture['count']} at {capture['time']} - {capture['n_logs']} logs
+                    </div>
+                    <div style='color: #64748b; font-size: 0.85rem; margin-top: 0.25rem;'>
+                        Avg Score: {sum(log['score'] for log in capture['logs_with_scores']) / len(capture['logs_with_scores']):.2f}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -133,7 +436,29 @@ if ddna_stats.get("status") == "success":
         topics = topics_response.get("topics", [])
         logs_by_topic = ddna_stats.get("logs_by_topic", {})
         
-        # Create a grid of topics
+        # Icon mapping for different topics
+        topic_icons = {
+            "application_lifecycle": "🚀",
+            "browser_activity": "🌐",
+            "system_startup": "⚡",
+            "system_shutdown": "🔌",
+            "user_sessions": "👤",
+            "network_activity": "📡",
+            "disk_activity": "💾",
+            "performance_issues": "⚠️",
+            "security": "🔒",
+            "updates": "🔄",
+            "application_errors": "❌",
+            "system_errors": "🚨",
+            "hardware_events": "🖥️",
+            "service_operations": "⚙️",
+            "driver_operations": "🔧",
+            "maintenance": "🛠️",
+            "web_development": "💻",
+            "extracurricular": "🎯"
+        }
+        
+        # Create a grid of topics with cards
         cols_per_row = 3
         for i in range(0, len(topics), cols_per_row):
             cols = st.columns(cols_per_row)
@@ -141,25 +466,220 @@ if ddna_stats.get("status") == "success":
                 if i + j < len(topics):
                     topic = topics[i + j]
                     log_count = logs_by_topic.get(topic, 0)
+                    icon = topic_icons.get(topic, "🎯")
+                    
                     with col:
-                        with st.expander(f"📂 {topic.replace('_', ' ').title()} ({log_count})"):
-                            if st.button(f"View Details", key=f"view_{topic}"):
+                        # Create a card-like container
+                        st.markdown(f"""
+                        <div style='
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            border-radius: 12px;
+                            padding: 1.5rem;
+                            margin-bottom: 1rem;
+                            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                            transition: transform 0.2s;
+                            cursor: pointer;
+                        '>
+                            <div style='display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;'>
+                                <span style='font-size: 2rem;'>{icon}</span>
+                                <span style='color: white; font-weight: 600; font-size: 1.1rem;'>
+                                    {topic.replace('_', ' ').title()}
+                                </span>
+                            </div>
+                            <div style='color: rgba(255, 255, 255, 0.9); font-size: 0.9rem;'>
+                                <span style='
+                                    background: rgba(255, 255, 255, 0.2);
+                                    padding: 0.25rem 0.75rem;
+                                    border-radius: 20px;
+                                    display: inline-block;
+                                '>
+                                    {log_count} logs
+                                </span>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # Buttons row
+                        btn_col1, btn_col2 = st.columns(2)
+                        
+                        with btn_col1:
+                            if st.button(f"View Details", key=f"view_{topic}", use_container_width=True):
                                 st.session_state['selected_topic'] = topic
+                        
+                        with btn_col2:
+                            if st.button(f"🔄 Restore", key=f"restore_{topic}", use_container_width=True, type="primary"):
+                                # Get topic data for restoration
+                                topic_data = get_local_ddna_topic(topic, limit=50)
+                                
+                                if topic_data.get("status") == "success" and topic_data.get("logs"):
+                                    with st.spinner(f"Restoring {topic.replace('_', ' ').title()}..."):
+                                        try:
+                                            # Call restore_state if available
+                                            if restore_state:
+                                                restore_state()
+                                                st.success(f"✅ Restored state based on {topic.replace('_', ' ').title()} topic!")
+                                            else:
+                                                st.warning("⚠️ Restore function not available. Feature coming soon!")
+                                            
+                                            # Alternative: Show what would be restored
+                                            logs = topic_data.get("logs", [])
+                                            apps = set()
+                                            urls = set()
+                                            
+                                            for log in logs[:10]:  # Analyze top 10 logs
+                                                if log.get('app_name'):
+                                                    apps.add(log.get('app_name'))
+                                                if log.get('url'):
+                                                    urls.add(log.get('url'))
+                                            
+                                            if apps or urls:
+                                                st.info(f"📋 Topic contains:\n- {len(apps)} unique apps\n- {len(urls)} unique URLs")
+                                        except Exception as e:
+                                            st.error(f"❌ Restore failed: {str(e)}")
+                                else:
+                                    st.warning(f"⚠️ No data available for {topic.replace('_', ' ').title()}")
     
     # Display selected topic details
     if 'selected_topic' in st.session_state:
         selected_topic = st.session_state['selected_topic']
-        st.subheader(f"Topic Details: {selected_topic.replace('_', ' ').title()}")
+        st.markdown("---")
+        st.markdown(f"""
+        <div style='
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        '>
+            <h2 style='color: white; margin: 0;'>
+                {topic_icons.get(selected_topic, "🎯")} {selected_topic.replace('_', ' ').title()}
+            </h2>
+        </div>
+        """, unsafe_allow_html=True)
         
-        topic_data = get_local_ddna_topic(selected_topic, limit=10)
+        topic_data = get_local_ddna_topic(selected_topic, limit=20)
         
         if topic_data.get("status") == "success":
-            st.write(f"Showing {topic_data.get('count', 0)} of {topic_data.get('total', 0)} logs")
+            # Action buttons row
+            action_col1, action_col2, action_col3 = st.columns([2, 1, 1])
+            
+            with action_col1:
+                st.write(f"📊 Showing **{topic_data.get('count', 0)}** of **{topic_data.get('total', 0)}** logs")
+            
+            with action_col2:
+                if st.button("🔄 Restore Topic", key=f"restore_detail_{selected_topic}", type="primary", use_container_width=True):
+                    logs = topic_data.get("logs", [])
+                    with st.spinner(f"Restoring {selected_topic.replace('_', ' ').title()}..."):
+                        try:
+                            if restore_state:
+                                restore_state()
+                                st.success(f"✅ Restored state based on {selected_topic.replace('_', ' ').title()} topic!")
+                            else:
+                                st.warning("⚠️ Restore function not available")
+                            
+                            # Show restoration summary
+                            apps = set()
+                            urls = set()
+                            for log in logs[:20]:
+                                if log.get('app_name'):
+                                    apps.add(log.get('app_name'))
+                                if log.get('url'):
+                                    urls.add(log.get('url'))
+                            
+                            if apps or urls:
+                                st.info(f"📋 Restoring:\n- {len(apps)} apps\n- {len(urls)} URLs")
+                        except Exception as e:
+                            st.error(f"❌ Error: {str(e)}")
+            
+            with action_col3:
+                if st.button("❌ Close", key=f"close_{selected_topic}", use_container_width=True):
+                    del st.session_state['selected_topic']
+                    st.rerun()
+            
+            st.markdown("---")
             
             logs = topic_data.get("logs", [])
+            
+            # Create cards for each log entry
             for idx, log in enumerate(logs):
-                with st.expander(f"Log {idx + 1} - {log.get('event_type', 'Unknown')} - {log.get('timestamp', 'N/A')[:19]}"):
-                    st.json(log)
+                # Determine card color based on event type
+                event_type = log.get('event_type', 'Unknown')
+                if 'error' in event_type.lower():
+                    gradient = "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
+                    emoji = "❌"
+                elif 'start' in event_type.lower() or 'launch' in event_type.lower():
+                    gradient = "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
+                    emoji = "🚀"
+                elif 'close' in event_type.lower() or 'end' in event_type.lower():
+                    gradient = "linear-gradient(135deg, #fa709a 0%, #fee140 100%)"
+                    emoji = "🔚"
+                else:
+                    gradient = "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)"
+                    emoji = "📝"
+                
+                # Format timestamp
+                timestamp = log.get('timestamp', log.get('saved_at', 'N/A'))
+                if timestamp != 'N/A':
+                    try:
+                        timestamp = timestamp[:19].replace('T', ' ')
+                    except:
+                        pass
+                
+                # Build card content
+                st.markdown(f"""
+                <div style='
+                    background: {gradient};
+                    border-radius: 10px;
+                    padding: 1.25rem;
+                    margin-bottom: 1rem;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                '>
+                    <div style='display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;'>
+                        <div style='display: flex; align-items: center; gap: 0.5rem;'>
+                            <span style='font-size: 1.5rem;'>{emoji}</span>
+                            <span style='color: #333; font-weight: 600; font-size: 1.1rem;'>
+                                {event_type}
+                            </span>
+                        </div>
+                        <span style='
+                            background: rgba(255, 255, 255, 0.7);
+                            padding: 0.25rem 0.75rem;
+                            border-radius: 15px;
+                            font-size: 0.85rem;
+                            color: #555;
+                        '>
+                            🕐 {timestamp}
+                        </span>
+                    </div>
+                    <div style='color: #333; margin-bottom: 0.5rem;'>
+                        <strong>Summary:</strong> {log.get('summary', 'No summary available')}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Additional details in an expander
+                with st.expander(f"🔍 View Full Details - Log #{idx + 1}", expanded=False):
+                    details_cols = st.columns(2)
+                    
+                    # Filter out already displayed fields
+                    detail_fields = {k: v for k, v in log.items() 
+                                   if k not in ['event_type', 'summary', 'timestamp', 'saved_at'] 
+                                   and v is not None}
+                    
+                    # Display key-value pairs in columns
+                    items = list(detail_fields.items())
+                    mid = len(items) // 2 + len(items) % 2
+                    
+                    with details_cols[0]:
+                        for key, value in items[:mid]:
+                            st.markdown(f"**{key.replace('_', ' ').title()}:** `{value}`")
+                    
+                    with details_cols[1]:
+                        for key, value in items[mid:]:
+                            st.markdown(f"**{key.replace('_', ' ').title()}:** `{value}`")
+                    
+                    # Show raw JSON as fallback
+                    with st.expander("📄 Raw JSON", expanded=False):
+                        st.json(log)
         else:
             st.error(f"Error loading topic: {topic_data.get('message', 'Unknown error')}")
     
@@ -177,18 +697,100 @@ if ddna_stats.get("status") == "success":
         search_results = search_local_ddna(search_query, case_sensitive=case_sensitive)
         
         if search_results.get("status") == "success":
-            st.success(f"Found {search_results.get('total_matches', 0)} matches across {search_results.get('matched_topics', 0)} topics")
+            st.success(f"🎯 Found **{search_results.get('total_matches', 0)}** matches across **{search_results.get('matched_topics', 0)}** topics")
             
             results = search_results.get("results", {})
             for topic, matches in results.items():
-                with st.expander(f"{topic.replace('_', ' ').title()} ({len(matches)} matches)"):
-                    for idx, match in enumerate(matches[:5]):  # Show first 5 matches per topic
+                st.markdown(f"""
+                <div style='
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    border-radius: 10px;
+                    padding: 1rem;
+                    margin: 1rem 0 0.5rem 0;
+                '>
+                    <h3 style='color: white; margin: 0;'>
+                        {topic_icons.get(topic, "🎯")} {topic.replace('_', ' ').title()} 
+                        <span style='
+                            background: rgba(255, 255, 255, 0.2);
+                            padding: 0.25rem 0.75rem;
+                            border-radius: 20px;
+                            font-size: 0.9rem;
+                            margin-left: 0.5rem;
+                        '>
+                            {len(matches)} matches
+                        </span>
+                    </h3>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Show matches in card format
+                for idx, match in enumerate(matches[:5]):  # Show first 5 matches per topic
+                    event_type = match.get('event_type', 'Unknown')
+                    timestamp = match.get('timestamp', match.get('saved_at', 'N/A'))
+                    if timestamp != 'N/A':
+                        try:
+                            timestamp = timestamp[:19].replace('T', ' ')
+                        except:
+                            pass
+                    
+                    st.markdown(f"""
+                    <div style='
+                        background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+                        border-radius: 8px;
+                        padding: 1rem;
+                        margin-bottom: 0.75rem;
+                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    '>
+                        <div style='display: flex; justify-content: space-between; align-items: start;'>
+                            <div>
+                                <span style='color: #333; font-weight: 600;'>{event_type}</span>
+                                <div style='color: #555; font-size: 0.9rem; margin-top: 0.25rem;'>
+                                    {match.get('summary', 'No summary available')}
+                                </div>
+                            </div>
+                            <span style='
+                                background: rgba(255, 255, 255, 0.7);
+                                padding: 0.25rem 0.5rem;
+                                border-radius: 12px;
+                                font-size: 0.8rem;
+                                color: #555;
+                                white-space: nowrap;
+                            '>
+                                {timestamp}
+                            </span>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    with st.expander(f"View Details - Match #{idx + 1}", expanded=False):
                         st.json(match)
-                    if len(matches) > 5:
-                        st.info(f"... and {len(matches) - 5} more matches")
+                
+                if len(matches) > 5:
+                    st.info(f"... and **{len(matches) - 5}** more matches in this topic")
+                
+                st.markdown("<br>", unsafe_allow_html=True)
         else:
             st.warning(search_results.get("message", "No results found"))
     
 else:
     st.warning(f"⚠️ {ddna_stats.get('message', 'Unable to load Local DDNA data')}")
     st.info("Make sure the Local DDNA directory exists and contains data files.")
+
+# Auto-refresh when capture is running
+if st.session_state.capture_running:
+    st.markdown("---")
+    st.markdown("""
+    <div style='
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+        margin-top: 2rem;
+    '>
+        <span style='color: white; font-size: 1.2rem; font-weight: bold;'>
+            🔄 Auto-refreshing every 5 seconds...
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
+    time.sleep(5)
+    st.rerun()

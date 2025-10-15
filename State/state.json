@@ -1,92 +1,14 @@
 {
-  "saved_at": "20251015_152612",
+  "saved_at": "20251015_224402",
   "apps": [
     {
-      "name": "chrome.exe",
-      "pid": 11304,
-      "exe": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-      "cmdline": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-      "windows": [
-        {
-          "hwnd": 263912,
-          "title": "Google Chrome",
-          "position": {
-            "x": 246,
-            "y": 17
-          },
-          "size": {
-            "width": 1042,
-            "height": 782
-          },
-          "state": "normal",
-          "style": {
-            "always_on_top": false,
-            "tool_window": false,
-            "app_window": false
-          },
-          "is_foreground": false,
-          "class_name": "Chrome_WidgetWin_1"
-        },
-        {
-          "hwnd": 721792,
-          "title": "(129) WhatsApp - Google Chrome",
-          "position": {
-            "x": -25600,
-            "y": -25600
-          },
-          "size": {
-            "width": 159,
-            "height": 27
-          },
-          "state": "minimized",
-          "style": {
-            "always_on_top": false,
-            "tool_window": false,
-            "app_window": false
-          },
-          "is_foreground": false,
-          "class_name": "Chrome_WidgetWin_1"
-        }
-      ],
-      "captured_at": "2025-10-15T15:25:58.397904"
-    },
-    {
-      "name": "Code.exe",
-      "pid": 13412,
-      "exe": "C:\\Users\\Hp\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe",
-      "cmdline": "C:\\Users\\Hp\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe",
-      "windows": [
-        {
-          "hwnd": 328132,
-          "title": "flow.py - IntelliOS - Visual Studio Code",
-          "position": {
-            "x": -7,
-            "y": -7
-          },
-          "size": {
-            "width": 1550,
-            "height": 830
-          },
-          "state": "maximized",
-          "style": {
-            "always_on_top": false,
-            "tool_window": false,
-            "app_window": false
-          },
-          "is_foreground": true,
-          "class_name": "Chrome_WidgetWin_1"
-        }
-      ],
-      "captured_at": "2025-10-15T15:25:58.399632"
-    },
-    {
       "name": "msedge.exe",
-      "pid": 15392,
+      "pid": 7644,
       "exe": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-      "cmdline": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe --remote-debugging-port=9225 --user-data-dir=Default --no-first-run --no-default-browser-check",
+      "cmdline": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe --remote-debugging-port=9231 --user-data-dir=Default --no-first-run --no-default-browser-check",
       "windows": [
         {
-          "hwnd": 2031670,
+          "hwnd": 197924,
           "title": "We couldn't create the data directory",
           "position": {
             "x": 582,
@@ -106,38 +28,87 @@
           "class_name": "#32770"
         }
       ],
-      "captured_at": "2025-10-15T15:25:58.402296"
+      "captured_at": "2025-10-15T22:43:48.108966"
     },
     {
-      "name": "Notepad.exe",
-      "pid": 16460,
-      "exe": "C:\\Program Files\\WindowsApps\\Microsoft.WindowsNotepad_11.2507.26.0_x64__8wekyb3d8bbwe\\Notepad\\Notepad.exe",
-      "cmdline": "C:\\Program Files\\WindowsApps\\Microsoft.WindowsNotepad_11.2507.26.0_x64__8wekyb3d8bbwe\\Notepad\\Notepad.exe /SESSION:M8nOm4KSZE6KEMyTdLMWxQEsQwA6AFwAVQBzAGUAcgBzAFwASABwAFwARABvAHcAbgBsAG8AYQBkAHMAXABkAGEAcwBoAGIAbwBhAHIAZABfAHMAdAByAGUAYQBtAGwAaQB0AC4AcAB5AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABCgABFBUAAEwBAABgAQAAAAAAAA==",
+      "name": "Code.exe",
+      "pid": 16604,
+      "exe": "C:\\Users\\Hp\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe",
+      "cmdline": "C:\\Users\\Hp\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe",
       "windows": [
         {
-          "hwnd": 460470,
-          "title": "dashboard_streamlit.py - Notepad",
+          "hwnd": 132124,
+          "title": "flow.py - IntelliOS - Visual Studio Code",
           "position": {
-            "x": 582,
-            "y": 158
+            "x": -7,
+            "y": -7
           },
           "size": {
-            "width": 657,
-            "height": 582
+            "width": 1550,
+            "height": 830
           },
-          "state": "normal",
+          "state": "maximized",
           "style": {
             "always_on_top": false,
             "tool_window": false,
             "app_window": false
           },
           "is_foreground": false,
-          "class_name": "Notepad"
+          "class_name": "Chrome_WidgetWin_1"
         }
       ],
-      "captured_at": "2025-10-15T15:25:58.403488"
+      "captured_at": "2025-10-15T22:43:48.158045"
+    },
+    {
+      "name": "chrome.exe",
+      "pid": 20784,
+      "exe": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      "cmdline": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      "windows": [
+        {
+          "hwnd": 66606,
+          "title": "Adaptive Workspace Dashboard - Google Chrome",
+          "position": {
+            "x": -7,
+            "y": -7
+          },
+          "size": {
+            "width": 1550,
+            "height": 830
+          },
+          "state": "maximized",
+          "style": {
+            "always_on_top": false,
+            "tool_window": false,
+            "app_window": false
+          },
+          "is_foreground": true,
+          "class_name": "Chrome_WidgetWin_1"
+        },
+        {
+          "hwnd": 263164,
+          "title": "Google Chrome",
+          "position": {
+            "x": -25600,
+            "y": -25600
+          },
+          "size": {
+            "width": 159,
+            "height": 27
+          },
+          "state": "minimized",
+          "style": {
+            "always_on_top": false,
+            "tool_window": false,
+            "app_window": false
+          },
+          "is_foreground": false,
+          "class_name": "Chrome_WidgetWin_1"
+        }
+      ],
+      "captured_at": "2025-10-15T22:43:48.175691"
     }
   ],
   "browsers": [],
-  "summary": "Captured 4 apps and 0 browser states"
+  "summary": "Captured 3 apps and 0 browser states"
 }

@@ -1,0 +1,42 @@
+[
+  {
+    "event_type": "app_state",
+    "summary": "App chrome.exe - 4 windows, 0 items, 0 files",
+    "saved_at": "20251015_142820",
+    "timestamp": "20251015_142820",
+    "app_name": "chrome.exe",
+    "exe_path": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "pid": 11304,
+    "window_count": 4,
+    "captured_at": "2025-10-15T14:27:40.130025",
+    "topic_score": 0.3168,
+    "topic_description": "Building websites and web applications. Includes code editors, local servers, terminals, and documentation."
+  },
+  {
+    "event_type": "browser_tab",
+    "summary": "Google Search: react js developement guiade",
+    "saved_at": "20251015_142820",
+    "timestamp": "20251015_142820",
+    "app_name": "chrome.exe",
+    "browser_name": "chrome",
+    "url": "https://google.com",
+    "domain": "google.com",
+    "title": "Google Search: react js developement guiade",
+    "is_active": false,
+    "topic_score": 0.5239,
+    "topic_description": "Building websites and web applications. Includes code editors, local servers, terminals, and documentation."
+  },
+  {
+    "event_type": "app_state",
+    "summary": "App chrome.exe - 4 windows, 0 items, 0 files",
+    "saved_at": "20251015_142820",
+    "timestamp": "20251015_142820",
+    "app_name": "chrome.exe",
+    "exe_path": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "pid": 11304,
+    "window_count": 4,
+    "captured_at": "2025-10-15T14:27:40.130025",
+    "topic_score": 0.3168,
+    "topic_description": "Building websites and web applications. Includes code editors, local servers, terminals, and documentation."
+  }
+]
