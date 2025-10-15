@@ -3,12 +3,16 @@ app_capture.py - Module for capturing application states
 """
 import os
 import psutil
+import logging
+import datetime
 import win32com.client
 import win32process
 import win32gui
 
-def get_main_window_info(pid):
-    """Get window information for a process"""
+logger = logging.getLogger(__name__)
+
+def get_all_window_info(pid):
+    """Get information for all windows of a process"""
     def callback(hwnd, window_info):
         try:
             _, found_pid = win32process.GetWindowThreadProcessId(hwnd)
@@ -16,15 +20,25 @@ def get_main_window_info(pid):
                 # Get window title
                 title = win32gui.GetWindowText(hwnd)
                 
+                # Skip empty or system-generated windows
+                if not title or title in ["Default IME", "MSCTFIME UI"]:
+                    return True
+                
                 # Get window rect (position and size)
                 rect = win32gui.GetWindowRect(hwnd)
                 left, top, right, bottom = rect
                 
-                # Get window state
+                # Get window state and extended style
                 style = win32gui.GetWindowLong(hwnd, -16)  # GWL_STYLE
+                ex_style = win32gui.GetWindowLong(hwnd, -20)  # GWL_EXSTYLE
+                
                 state = "minimized" if style & 0x20000000 else "maximized" if style & 0x01000000 else "normal"
                 
+                # Get foreground status
+                is_foreground = hwnd == win32gui.GetForegroundWindow()
+                
                 window_info.append({
+                    "hwnd": hwnd,
                     "title": title,
                     "position": {
                         "x": left,
@@ -34,15 +48,22 @@ def get_main_window_info(pid):
                         "width": right - left,
                         "height": bottom - top
                     },
-                    "state": state
+                    "state": state,
+                    "style": {
+                        "always_on_top": bool(ex_style & 0x00000008),
+                        "tool_window": bool(ex_style & 0x00000080),
+                        "app_window": bool(ex_style & 0x00040000)
+                    },
+                    "is_foreground": is_foreground,
+                    "class_name": win32gui.GetClassName(hwnd)
                 })
-        except Exception:
-            pass
+        except Exception as e:
+            logging.warning(f"Error getting window info: {e}")
         return True
     
     window_info = []
     win32gui.EnumWindows(lambda hwnd, _: callback(hwnd, window_info), None)
-    return window_info[0] if window_info else None
+    return window_info
 
 def get_word_docs():
     try:
@@ -107,7 +128,8 @@ def capture_app_states():
         "WINWORD.EXE","EXCEL.EXE","POWERPNT.EXE","VISIO.EXE", "MSPUB.EXE",
         "MSACCESS.EXE","WINPROJ.EXE","ONENOTE.EXE","notepad.exe","notepad++.exe",
         "code.exe","Code.exe","devenv.exe","sublime_text.exe","Acrobat.exe",
-        "AcroRd32.exe","vlc.exe","obs64.exe","photoshop.exe","idea64.exe","pycharm64.exe"
+        "AcroRd32.exe","vlc.exe","obs64.exe","photoshop.exe","idea64.exe","pycharm64.exe",
+        "chrome.exe", "msedge.exe", "firefox.exe", "opera.exe", "brave.exe"
     ]
 
     office_apps = {
@@ -122,21 +144,46 @@ def capture_app_states():
     }
 
     apps = []
-    for proc in psutil.process_iter(['pid', 'name', 'exe', 'cmdline']):
-        name = proc.info['name']
-        if name not in whitelist:
-            continue
-        
-        if name in office_apps.keys():
-            files = office_apps[name]()
-            if files:
-                apps.append({
+    try:
+        for proc in psutil.process_iter(['pid', 'name', 'exe', 'cmdline']):
+            try:
+                name = proc.info['name']
+                if name.lower() not in [x.lower() for x in whitelist]:
+                    continue
+                
+                app_info = {
                     "name": name,
                     "pid": proc.info['pid'],
                     "exe": proc.info['exe'],
                     "cmdline": ' '.join(proc.info['cmdline']) if proc.info['cmdline'] else '',
-                    "files": list(set(files)),
-                    "windowInfo": get_main_window_info(proc.info['pid'])
-                })
+                    "windows": get_all_window_info(proc.info['pid']),
+                    "captured_at": datetime.datetime.now().isoformat()
+                }
+                
+                # Get Office documents if applicable
+                if name in office_apps:
+                    try:
+                        files = office_apps[name]()
+                        if files:
+                            app_info["files"] = list(set(files))
+                    except Exception as e:
+                        logger.warning(f"Failed to get documents for {name}: {e}")
+                
+                if app_info["windows"] or app_info.get("files"):
+                    apps.append(app_info)
+                    logger.debug(f"Captured state for {name} with {len(app_info['windows'])} windows")
+                
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
+                logger.warning(f"Failed to capture process info: {e}")
+                continue
+            except Exception as e:
+                logger.error(f"Unexpected error capturing app state: {e}")
+                continue
+                
+    except Exception as e:
+        logger.error(f"Failed to capture application states: {e}")
+    
+    logger.info(f"Captured state for {len(apps)} applications")
+    return apps
 
     return sorted(apps, key=lambda x: x["name"])

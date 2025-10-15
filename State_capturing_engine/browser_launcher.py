@@ -53,14 +53,16 @@ def find_next_available_port(port_data):
 
 def is_port_in_use(port):
     """Check if a port is already in use."""
-    for proc in psutil.process_iter(['connections']):
-        try:
-            for conn in proc.connections():
-                if conn.laddr.port == port:
-                    return True
-        except (psutil.NoSuchProcess, psutil.AccessDenied):
-            continue
-    return False
+    # Use a more direct approach to check if port is in use
+    import socket
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(1)
+            result = s.connect_ex(('127.0.0.1', port))
+            return result == 0  # If port is in use, connect_ex returns 0
+    except Exception as e:
+        print(f"Error checking port {port}: {e}")
+        return False
 
 def launch_browser(browser_name, profile_name):
     """Launch browser with remote debugging enabled for the specified profile."""

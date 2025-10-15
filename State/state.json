@@ -1,83 +1,143 @@
 {
-    "saved_at":  "2025-08-26T12:32:41.9607091+05:30",
-    "user":  "jaypa",
-    "browsers":  [
-                     {
-                         "browser":  "chrome",
-                         "exe": "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-                         "windows":  [
-                                         {
-                                             "profile": "C:\\ChromeDebugProfile",
-                                             "debuggingPort":  9222,
-                                             "tabs":  [
-                                                          {
-                                                              "url":  "https://monkeytype.com/",
-                                                              "title":  "Monkeytype | A minimalistic, customizable typing test",
-                                                              "description": ""
-                                                          },
-                                                          {
-                                                              "url":  "https://www.google.com/search?q=hello&oq=hello&gs_lcrp=EgZjaHJvbWUyBggAEEUYOdIBBzY4NGowajeoAgCwAgA&sourceid=chrome&ie=UTF-8&sei=g1viaJn-GsaSseMPxL2yoQE",
-                                                              "title":  "hello - Google Search",
-                                                              "description": ""
-                                                          }
-                                                      ]
-                                         },
-                                         {
-                                             "profile": "C:\\ChromeDebugProfile",
-                                             "debuggingPort":  9223,
-                                             "tabs":  [
-                                                          {
-                                                              "url":  "https://www.google.com/search?q=hello+jay\u0026oq=he\u0026gs_lcrp=EgZjaHJvbWUqBggAEEUYOzIGCAAQRRg7MgoIARAuGLEDGIAEMgYIAhBFGDkyCggDEAAYsQMYgAQyEAgEEC4YxwEYsQMY0QMYgAQyEAgFEC4YxwEYsQMY0QMYgAQyBwgGEC4YgAQyCggHEC4YsQMYgAQyCggIEAAYsQMYgAQyBwgJEAAYjwLSAQgzNDE0ajBqN6gCALACAA\u0026sourceid=chrome\u0026ie=UTF-8",
-                                                              "title":  "hello jay - Google Search",
-                                                              "description": ""
-                                                          }
-                                                      ]
-                                         },
-                                         {
-                                             "profile": "C:\\ChromeDebugProfile",
-                                             "debuggingPort":  9224,
-                                             "tabs":  [
-                                                          {
-                                                              "url":  "https://fast.com/",
-                                                              "title":  "Internet Speed Test | Fast.com",
-                                                              "description": ""
-                                                          }
-                                                      ]
-                                         }
-                                     ]
-                     }
-                 ],
-    "apps": [   {
-                    "name":  "EXCEL.EXE",
-                    "pid":  null,
-                    "exe":  "C:\\Program Files\\Microsoft Office\\root\\Office16\\EXCEL.EXE",
-                    "cmdline":  null,
-                    "items":  [
-                               "C:\\Users\\jaypa\\Edunet_AICTE_Internship\\cleaned_dataset.csv",
-                               "C:\\Users\\jaypa\\Downloads\\data_cleaned_asian_countries.csv"
-                    ],
-                    "windowInfo": {
-                        "title": "Microsoft Word",
-                        "position": {
-                            "x": 100,
-                            "y": 200
-                        },
-                        "size": {
-                            "width": 1024,
-                            "height": 768
-                        },
-                        "state": "normal"
-                    }
-                },
-                {
-                    "name":  "Notepad.Exe",
-                    "pid":  null,
-                    "exe":  "C:\\Program Files\\WindowsApps\\Microsoft.WindowsNotepad_11.2507.26.0_x64__8wekyb3d8bbwe\\Notepad\\Notepad.exe",
-                    "cmdline":  null,
-                    "items":  [
-                               "C:\\Users\\jaypa\\OneDrive\\Desktop\\addverb.txt"
-                    ],
-                    "windowInfo": null
-                }
-            ]
+  "saved_at": "20251015_152612",
+  "apps": [
+    {
+      "name": "chrome.exe",
+      "pid": 11304,
+      "exe": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      "cmdline": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      "windows": [
+        {
+          "hwnd": 263912,
+          "title": "Google Chrome",
+          "position": {
+            "x": 246,
+            "y": 17
+          },
+          "size": {
+            "width": 1042,
+            "height": 782
+          },
+          "state": "normal",
+          "style": {
+            "always_on_top": false,
+            "tool_window": false,
+            "app_window": false
+          },
+          "is_foreground": false,
+          "class_name": "Chrome_WidgetWin_1"
+        },
+        {
+          "hwnd": 721792,
+          "title": "(129) WhatsApp - Google Chrome",
+          "position": {
+            "x": -25600,
+            "y": -25600
+          },
+          "size": {
+            "width": 159,
+            "height": 27
+          },
+          "state": "minimized",
+          "style": {
+            "always_on_top": false,
+            "tool_window": false,
+            "app_window": false
+          },
+          "is_foreground": false,
+          "class_name": "Chrome_WidgetWin_1"
+        }
+      ],
+      "captured_at": "2025-10-15T15:25:58.397904"
+    },
+    {
+      "name": "Code.exe",
+      "pid": 13412,
+      "exe": "C:\\Users\\Hp\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe",
+      "cmdline": "C:\\Users\\Hp\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe",
+      "windows": [
+        {
+          "hwnd": 328132,
+          "title": "flow.py - IntelliOS - Visual Studio Code",
+          "position": {
+            "x": -7,
+            "y": -7
+          },
+          "size": {
+            "width": 1550,
+            "height": 830
+          },
+          "state": "maximized",
+          "style": {
+            "always_on_top": false,
+            "tool_window": false,
+            "app_window": false
+          },
+          "is_foreground": true,
+          "class_name": "Chrome_WidgetWin_1"
+        }
+      ],
+      "captured_at": "2025-10-15T15:25:58.399632"
+    },
+    {
+      "name": "msedge.exe",
+      "pid": 15392,
+      "exe": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+      "cmdline": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe --remote-debugging-port=9225 --user-data-dir=Default --no-first-run --no-default-browser-check",
+      "windows": [
+        {
+          "hwnd": 2031670,
+          "title": "We couldn't create the data directory",
+          "position": {
+            "x": 582,
+            "y": 346
+          },
+          "size": {
+            "width": 386,
+            "height": 186
+          },
+          "state": "normal",
+          "style": {
+            "always_on_top": false,
+            "tool_window": false,
+            "app_window": false
+          },
+          "is_foreground": false,
+          "class_name": "#32770"
+        }
+      ],
+      "captured_at": "2025-10-15T15:25:58.402296"
+    },
+    {
+      "name": "Notepad.exe",
+      "pid": 16460,
+      "exe": "C:\\Program Files\\WindowsApps\\Microsoft.WindowsNotepad_11.2507.26.0_x64__8wekyb3d8bbwe\\Notepad\\Notepad.exe",
+      "cmdline": "C:\\Program Files\\WindowsApps\\Microsoft.WindowsNotepad_11.2507.26.0_x64__8wekyb3d8bbwe\\Notepad\\Notepad.exe /SESSION:M8nOm4KSZE6KEMyTdLMWxQEsQwA6AFwAVQBzAGUAcgBzAFwASABwAFwARABvAHcAbgBsAG8AYQBkAHMAXABkAGEAcwBoAGIAbwBhAHIAZABfAHMAdAByAGUAYQBtAGwAaQB0AC4AcAB5AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABCgABFBUAAEwBAABgAQAAAAAAAA==",
+      "windows": [
+        {
+          "hwnd": 460470,
+          "title": "dashboard_streamlit.py - Notepad",
+          "position": {
+            "x": 582,
+            "y": 158
+          },
+          "size": {
+            "width": 657,
+            "height": 582
+          },
+          "state": "normal",
+          "style": {
+            "always_on_top": false,
+            "tool_window": false,
+            "app_window": false
+          },
+          "is_foreground": false,
+          "class_name": "Notepad"
+        }
+      ],
+      "captured_at": "2025-10-15T15:25:58.403488"
+    }
+  ],
+  "browsers": [],
+  "summary": "Captured 4 apps and 0 browser states"
 }

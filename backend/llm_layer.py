@@ -14,13 +14,18 @@ load_dotenv()
 # Set up logging
 logger = logging.getLogger(__name__)
 
-# Initialize Groq client with instructor
+# Initialize Groq client with instructor if API key is available
 api_key = os.getenv("GROQ_API_KEY")
+client = None
+
 if not api_key:
-    logger.error("GROQ_API_KEY not found in environment variables")
-    raise ValueError("GROQ_API_KEY environment variable is required")
-    
-client = instructor.patch(groq.Groq(api_key=api_key))
+    logger.warning("GROQ_API_KEY not found in environment variables. LLM functionality will be disabled.")
+else:
+    try:
+        client = instructor.patch(groq.Groq(api_key=api_key))
+        logger.info("Groq client initialized successfully")
+    except Exception as e:
+        logger.warning(f"Failed to initialize Groq client: {e}. LLM functionality will be disabled.")
 
 def parse_with_llm(provider: str, message: str, max_retries=3, base_delay=5):
     """
@@ -33,6 +38,11 @@ def parse_with_llm(provider: str, message: str, max_retries=3, base_delay=5):
         max_retries: Maximum number of retries for rate limit errors
         base_delay: Base delay in seconds for exponential backoff
     """
+    # Check if client is initialized
+    if client is None:
+        logger.warning("LLM client not initialized. Cannot parse message.")
+        return None
+        
     # Removed duplicate try-except block
     retry_count = 0
     while retry_count <= max_retries:
