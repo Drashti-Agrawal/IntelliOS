@@ -2,6 +2,12 @@ import time
 import threading
 import logging
 from datetime import datetime
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'backend')))
+
+from server import capture_state
 
 class BackgroundRunner:
     def __init__(self, interval_seconds, target_function, *args, **kwargs):
@@ -59,18 +65,16 @@ def classify_logs():
 # Usage
 if __name__ == "__main__":
     # Run log fetching every 3 seconds
-    fetch_runner = BackgroundRunner(3, fetch_logs,2)
+    state_capture_runner = BackgroundRunner(3, state_capture)
     
-    # Run log processing every 6 seconds
-    process_runner = BackgroundRunner(6, process_logs)
+    # # Run log processing every 6 seconds
+    # process_runner = BackgroundRunner(6, process_logs)
     
-    # Run log classification every 12 seconds
-    classify_runner = BackgroundRunner(12, classify_logs)
+    # # Run log classification every 12 seconds
+    # classify_runner = BackgroundRunner(12, classify_logs)
     
     # Start all runners
-    fetch_runner.start()
-    process_runner.start()
-    classify_runner.start()
+    state_capture_runner.start()
     
     try:
         # Keep main thread alive
@@ -78,6 +82,4 @@ if __name__ == "__main__":
             time.sleep(1)
     except KeyboardInterrupt:
         print("Stopping all runners...")
-        fetch_runner.stop()
-        process_runner.stop()
-        classify_runner.stop()
+        state_capture_runner.stop()

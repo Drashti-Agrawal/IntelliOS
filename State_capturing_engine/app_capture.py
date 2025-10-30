@@ -4,6 +4,7 @@ app_capture.py - Module for capturing application states
 import os
 import psutil
 import win32com.client
+import pythoncom
 import win32process
 import win32gui
 
@@ -46,58 +47,93 @@ def get_main_window_info(pid):
 
 def get_word_docs():
     try:
-        word = win32com.client.GetActiveObject("Word.Application")
-        return [doc.FullName for doc in word.Documents]
+        pythoncom.CoInitialize()
+        try:
+            word = win32com.client.GetActiveObject("Word.Application")
+            return [doc.FullName for doc in word.Documents]
+        finally:
+            pythoncom.CoUninitialize()
     except Exception:
         return []
 
 def get_excel_books():
     try:
-        xl = win32com.client.GetActiveObject("Excel.Application")
-        return [wb.FullName for wb in xl.Workbooks]
-    except Exception:
+        print("Getting Excel books")
+        pythoncom.CoInitialize()
+        try:
+            xl = win32com.client.GetActiveObject("Excel.Application")
+            print("Workbooks :", xl.Workbooks)
+            return [wb.FullName for wb in xl.Workbooks]
+        finally:
+            pythoncom.CoUninitialize()
+    except Exception as e:
+        print("Error :", str(e))
         return []
 
 def get_powerpoint_pres():
     try:
-        pp = win32com.client.GetActiveObject("PowerPoint.Application")
-        return [pres.FullName for pres in pp.Presentations]
+        pythoncom.CoInitialize()
+        try:
+            pp = win32com.client.GetActiveObject("PowerPoint.Application")
+            return [pres.FullName for pres in pp.Presentations]
+        finally:
+            pythoncom.CoUninitialize()
     except Exception:
         return []
     
 def get_visio_drawings():
     try:
-        visio = win32com.client.GetActiveObject("Visio.Application")
-        return [doc.FullName for doc in visio.Documents]
+        pythoncom.CoInitialize()
+        try:
+            visio = win32com.client.GetActiveObject("Visio.Application")
+            return [doc.FullName for doc in visio.Documents]
+        finally:
+            pythoncom.CoUninitialize()
     except Exception:
         return []
 
 def get_publisher_docs():
     try:
-        pub = win32com.client.GetActiveObject("Publisher.Application")
-        return [doc.FullName for doc in pub.Documents]
+        pythoncom.CoInitialize()
+        try:
+            pub = win32com.client.GetActiveObject("Publisher.Application")
+            return [doc.FullName for doc in pub.Documents]
+        finally:
+            pythoncom.CoUninitialize()
     except Exception:
         return []
 
 def get_project_files():
     try:
-        proj = win32com.client.GetActiveObject("MSProject.Application")
-        return [proj.FullName for proj in proj.Projects]
+        pythoncom.CoInitialize()
+        try:
+            proj = win32com.client.GetActiveObject("MSProject.Application")
+            return [proj.FullName for proj in proj.Projects]
+        finally:
+            pythoncom.CoUninitialize()
     except Exception:
         return []
 
 def get_access_dbs():
     try:
-        access = win32com.client.GetActiveObject("Access.Application")
-        return [access.CurrentProject.FullName] if access.CurrentProject else []
+        pythoncom.CoInitialize()
+        try:
+            access = win32com.client.GetActiveObject("Access.Application")
+            return [access.CurrentProject.FullName] if access.CurrentProject else []
+        finally:
+            pythoncom.CoUninitialize()
     except Exception:
         return []
 
 def get_onenote_files():
     try:
-        onenote = win32com.client.GetActiveObject("OneNote.Application")
-        hierarchy = onenote.GetHierarchy("", 3)  # 3 = hsPages
-        return [page.Path for page in hierarchy.PageNodes]
+        pythoncom.CoInitialize()
+        try:
+            onenote = win32com.client.GetActiveObject("OneNote.Application")
+            hierarchy = onenote.GetHierarchy("", 3)  # 3 = hsPages
+            return [page.Path for page in hierarchy.PageNodes]
+        finally:
+            pythoncom.CoUninitialize()
     except Exception:
         return []
 

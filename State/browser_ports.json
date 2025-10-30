@@ -8,12 +8,12 @@
                     {
                         "port": "9222",
                         "launched_at": "2025-10-03T10:30:00",
-                        "status": "active"
+                        "status": "inactive"
                     },
                     {
                         "port": "9223",
                         "launched_at": "2025-10-03T11:15:00",
-                        "status": "active"
+                        "status": "inactive"
                     },
                     {
                         "port": "9224",
@@ -33,6 +33,66 @@
                     {
                         "port": "9226",
                         "launched_at": "2025-10-03T10:00:00",
+                        "status": "active"
+                    }
+                ]
+            },
+            {
+                "profile": "D:\\Major\\IntelliOS\\Direct_runner\\profile_copies\\profile_copy_20251030_202844",
+                "instances": [
+                    {
+                        "port": "9222",
+                        "launched_at": "2025-10-30T20:28:44",
+                        "status": "inactive"
+                    }
+                ]
+            },
+            {
+                "profile": "D:\\Major\\IntelliOS\\Direct_runner\\profile_copies\\profile_copy_20251030_203006",
+                "instances": [
+                    {
+                        "port": "9223",
+                        "launched_at": "2025-10-30T20:30:06",
+                        "status": "inactive"
+                    }
+                ]
+            },
+            {
+                "profile": "D:\\Major\\IntelliOS\\Direct_runner\\profile_copies\\profile_copy_20251030_203505",
+                "instances": [
+                    {
+                        "port": "9222",
+                        "launched_at": "2025-10-30T20:35:05",
+                        "status": "inactive"
+                    }
+                ]
+            },
+            {
+                "profile": "C:\\Users\\jaypa\\AppData\\Local\\Google\\Chrome\\User Data\\Default",
+                "instances": [
+                    {
+                        "port": "9222",
+                        "launched_at": "2025-10-30T21:00:27",
+                        "status": "inactive"
+                    }
+                ]
+            },
+            {
+                "profile": "D:\\Major\\IntelliOS\\Direct_runner\\profile_copies\\profile_copy_20251030_210132",
+                "instances": [
+                    {
+                        "port": "9222",
+                        "launched_at": "2025-10-30T21:01:32",
+                        "status": "active"
+                    }
+                ]
+            },
+            {
+                "profile": "C:\\Users\\jaypa\\AppData\\Local\\Google\\Chrome\\User Data\\Profile 2",
+                "instances": [
+                    {
+                        "port": "9223",
+                        "launched_at": "2025-10-30T21:01:42",
                         "status": "active"
                     }
                 ]

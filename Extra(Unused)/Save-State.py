@@ -9,12 +9,12 @@ import win32process
 import win32gui
 
 OUT_FILE = r"D:\\Major\\Restoration_engine\\state.json"
-BROWSER_PORTS_FILE = r"D:\\Major\\IntelliOS\\Restoration_engine\\browser_ports.json"
+BROWSER_PORTS_FILE = r"D:\\Major\\IntelliOS\\State\\browser_ports.json"
 USE_HANDLE = True  # Not implemented, placeholder
 
 def get_devtools_tabs(base_url):
     try:
-        resp = requests.get(f"{base_url}/json", timeout=10)
+        resp = requests.get(f"{base_url}/json", timeout=1)
         tabs = resp.json()
         formatted_tabs = []
         for tab in tabs:

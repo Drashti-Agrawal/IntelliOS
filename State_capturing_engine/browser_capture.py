@@ -7,7 +7,7 @@ import requests
 def get_devtools_tabs(base_url):
     """Get tabs information from browser's devtools API"""
     try:
-        resp = requests.get(f"{base_url}/json", timeout=10)
+        resp = requests.get(f"{base_url}/json", timeout=1)
         tabs = resp.json()
         formatted_tabs = []
         for tab in tabs:

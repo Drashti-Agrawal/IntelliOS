@@ -16,10 +16,12 @@ from dotenv import load_dotenv
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'State_capturing_engine')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Restoration_engine')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Configure_browsers')))
 from browser_capture import capture_browser_states
 from app_capture import capture_app_states
 from browser_restore import restore_browsers
 from app_restore import restore_apps
+from create_browser_shortcuts import create_browser_shortcuts
 
 # Load environment variables
 load_dotenv()
@@ -37,12 +39,6 @@ from topics import TOPICS
 # Import the process_logs function from main.py
 from main import process_logs
 
-# Import restoration modules
-sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Restoration_engine"))
-from browser_restore import restore_browsers
-from app_restore import restore_apps
-from browser_capture import capture_browser_states
-from app_capture import capture_app_states
 
 # Set up the logger
 logger = logging.getLogger(__name__)
@@ -316,6 +312,18 @@ async def get_vector_db_stats():
     except Exception as e:
         logger.error(f"Error getting vector database stats: {e}")
         raise HTTPException(status_code=500, detail=f"Error getting vector database stats: {str(e)}")
+    
+@app.get("/api/create_shortcuts")
+async def create_shortcuts():
+    try:
+        create_browser_shortcuts()
+        return {
+            "status": "success",
+            "message": "Shortcuts successfully created"
+        }
+    except Exception as e:
+        logger.error(f"Error creating shortcuts : {e}")
+        raise HTTPException(status_code=500, detail=f"Error creating shortcuts : {str(e)}")
 
 # State Restoration endpoints
 @app.post("/api/capture", response_model=CaptureResponse, tags=["State Management"])
