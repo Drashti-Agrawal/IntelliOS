@@ -1,28 +1,55 @@
 {
-  "saved_at": "2025-10-14T23:57:46.205360",
+  "saved_at": "2025-11-01T15:58:15.096369",
   "user": "jaypa",
-  "browsers": [],
-  "apps": [
+  "browsers": [
     {
-      "name": "EXCEL.EXE",
-      "pid": 19692,
-      "exe": "C:\\Program Files\\Microsoft Office\\root\\Office16\\EXCEL.EXE",
-      "cmdline": "C:\\Program Files\\Microsoft Office\\Root\\Office16\\EXCEL.EXE C:\\Users\\jaypa\\Edunet_AICTE_Internship\\cleaned_dataset.csv",
-      "files": [
-        "C:\\Users\\jaypa\\Edunet_AICTE_Internship\\cleaned_dataset.csv"
-      ],
-      "windowInfo": {
-        "title": "cleaned_dataset - Excel",
-        "position": {
-          "x": 286,
-          "y": 286
-        },
-        "size": {
-          "width": 689,
-          "height": 400
-        },
-        "state": "normal"
-      }
+      "browser": "chrome",
+      "exe": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      "windows": [
+        {
+          "profile": "D:\\Major\\IntelliOS\\Configure_browsers\\profile_copies\\profile_copy_20251101_144833",
+          "debuggingPort": 9222,
+          "tabs": [
+            {
+              "id": "E69070DA42C52A27B75E06D928A3F575",
+              "url": "http://localhost:9222/json",
+              "title": "localhost:9222/json",
+              "description": "",
+              "tab_launched_at": null
+            },
+            {
+              "id": "1BFD30030A13EDAAE9253A4CFFB61C06",
+              "url": "https://www.google.com/search?q=how+to+get+the+launching+time+of+a+chrome+tab+from+its+id&oq=how+to+get+the+launching+time+of+a+chrome+tab+from+its+id&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIHCAEQIRigATIHCAIQIRigATIHCAMQIRigAdIBCTE5NzM1ajBqN6gCALACAA&sourceid=chrome&ie=UTF-8",
+              "title": "how to get the launching time of a chrome tab from its id - Google Search",
+              "description": "",
+              "tab_launched_at": null
+            },
+            {
+              "id": "AC74FCF092A6ADA4CD525C4B7A8AD0F1",
+              "url": "https://www.google.com/search?q=new+sdfasfa&oq=new+sdfasfa&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIKCAEQABixAxiABDIKCAIQABixAxiABDIQCAMQLhjHARixAxjRAxiABDIKCAQQABixAxiABDIKCAUQABixAxiABDIHCAYQABiABDIKCAcQLhixAxiABDIQCAgQLhjHARixAxjRAxiABDIHCAkQABiABNIBCDEwNjNqMGo3qAIAsAIA&sourceid=chrome&ie=UTF-8",
+              "title": "new sdfasfa - Google Search",
+              "description": "",
+              "tab_launched_at": null
+            },
+            {
+              "id": "844F80FED2C880D850ADAD6507E560A0",
+              "url": "https://www.google.com/search?q=hello&oq=hello&gs_lcrp=EgZjaHJvbWUqFQgAEAAYQxjjAhixAxjJAxiABBiKBTIVCAAQABhDGOMCGLEDGMkDGIAEGIoFMhIIARAuGEMYsQMYyQMYgAQYigUyDAgCEC4YQxiABBiKBTINCAMQABiSAxiABBiKBTINCAQQABiSAxiABBiKBTIMCAUQLhhDGIAEGIoFMhAIBhAuGIMBGLEDGIAEGIoFMgoIBxAAGLEDGIAEMg8ICBAuGEMY1AIYgAQYigUyDwgJEC4YQxjUAhiABBiKBdIBBzgyNWowajeoAgCwAgA&sourceid=chrome&ie=UTF-8",
+              "title": "hello - Google Search",
+              "description": "",
+              "tab_launched_at": null
+            },
+            {
+              "id": "65BE6557A1CFE5764C194BB1A9FA1EAB",
+              "url": "https://www.google.com/search?q=good+bye&oq=good+bye&gs_lcrp=EgZjaHJvbWUqDQgAEAAY4wIYsQMYgAQyDQgAEAAY4wIYsQMYgAQyCggBEC4YsQMYgAQyCQgCEC4YChiABDIHCAMQABiABDIKCAQQABixAxiABDIGCAUQABgDMgYIBhAAGAMyBwgHEC4YgAQyBwgIEAAYgAQyCQgJEAAYChiABNIBCTE2ODIwajBqN6gCALACAA&sourceid=chrome&ie=UTF-8&sei=gNAFaYjAFfeH4-EPrcOGgAU",
+              "title": "good bye - Google Search",
+              "description": "",
+              "tab_launched_at": null
+            }
+          ],
+          "window_launched_at": "2025-11-01T14:48:33"
+        }
+      ]
     }
-  ]
+  ],
+  "apps": []
 }

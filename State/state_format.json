@@ -50,6 +50,10 @@
                                     "items": {
                                         "type": "object",
                                         "properties": {
+                                            "id": {
+                                                "type": ["string", "null"],
+                                                "description": "Identifier for the devtools target (if available)"
+                                            },
                                             "url": {
                                                 "type": "string",
                                                 "description": "Full URL of the tab",
@@ -62,13 +66,18 @@
                                             "description": {
                                                 "type": "string",
                                                 "description": "Additional description or metadata for the tab"
+                                            },
+                                            "tab_launched_at": {
+                                                "type": ["string", "null"],
+                                                "description": "ISO timestamp (UTC) when the browsing context was created (from CDP), or null if not available",
+                                                "format": "date-time"
                                             }
                                         },
-                                        "required": ["url", "title"]
+                                        "required": ["url", "title", "captured_at"]
                                     }
                                 }
                             },
-                            "required": ["debuggingPort", "tabs"]
+                            "required": ["profile", "debuggingPort", "tabs"]
                         }
                     }
                 },
@@ -105,7 +114,12 @@
                         "description": "List of files currently opened by the application",
                         "items": {
                             "type": "string",
-                            "description": "Full path to an opened file or folder"
+                            "description": "Full path to an opened file or folder",
+                            "opened_at": {
+                                "type": "string",
+                                "description": "ISO timestamp (UTC) when the file or folder was opened",
+                                "format": "date-time"
+                            }
                         }
                     },
                     "windowInfo": {
