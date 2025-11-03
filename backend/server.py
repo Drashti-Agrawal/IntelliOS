@@ -52,6 +52,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+LAST_CAPTURED = os.environ.get('LAST_CAPTURED')
+if LAST_CAPTURED is None:
+    LAST_CAPTURED = datetime.fromtimestamp(0, tz=timezone(timedelta(hours=5, minutes=30))).isoformat()
+
 
 # Define response models
 
@@ -128,7 +132,7 @@ async def capture_state():
         apps = []
         #Capture browser states
         try:
-            browsers = capture_browser_states(browser_ports_data)
+            browsers = capture_browser_states(browser_ports_data, LAST_CAPTURED)
         except Exception as e:
             logger.error(f"Error capturing browser states: {e}")
             raise HTTPException(
@@ -147,11 +151,26 @@ async def capture_state():
         
         # Create state object
         state = {
-            "saved_at": datetime.now().isoformat(),
+            "saved_at": datetime.now(tz=timezone(timedelta(hours=5, minutes=30))).isoformat(),
             "user": os.environ.get("USERNAME", ""),
             "browsers": browsers,
             "apps": apps
         }
+        env_file = os.path.join(os.getcwd(), ".env")
+        env_vars = {}
+        ist_now = datetime.now(tz=timezone(timedelta(hours=5, minutes=30))).isoformat()
+        if os.path.exists(env_file):
+            with open(env_file, "r") as f:
+                for line in f:
+                    if "=" in line and not line.strip().startswith("#"):
+                        key, val = line.strip().split("=", 1)
+                        env_vars[key] = val
+        env_vars["LAST_CAPTURED"] = ist_now
+        with open(env_file, "w") as f:
+            for k, v in env_vars.items():
+                f.write(f"{k}={v}\n")
+        print(f"[SUCCESS] Environment file updated with LAST_CAPTURED={ist_now}")
+        # os.environ.update({"LAST_CAPTURED":datetime.now(tz=timezone(timedelta(hours=5, minutes=30))).isoformat()})
         
         # Save state to file
         with open(state_file_path, "w", encoding="utf-8") as f:

@@ -6,7 +6,7 @@ from pathlib import Path
 import psutil
 import socket
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 # Constants
 BASE_PORT = 9222
@@ -252,7 +252,7 @@ def launch_browser(browser_name, profile_name):
         # Add the new instance data
         profile_entry["instances"].append({
             "port": str(debug_port),
-            "launched_at": datetime.now().isoformat(timespec='seconds'),
+            "launched_at": datetime.now(tz=timezone(timedelta(hours=5, minutes=30))).isoformat(timespec='seconds'),
             "status": "active"
         })
 
