@@ -7,8 +7,11 @@ import sys
 import psutil
 import shutil
 from datetime import datetime
+import socket
 
 # Directory to store profile copies
+BASE_PORT = 9222
+MAX_PORT = 9300
 PROFILE_COPIES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "profile_copies")
 
 # Default browser paths
@@ -123,6 +126,14 @@ def create_profile_copy(original_profile):
             return new_profile_path
         return None
 
+def find_free_port(start_port=BASE_PORT, end_port=MAX_PORT):
+    """Find the next available TCP port."""
+    for port in range(start_port, end_port + 1):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if s.connect_ex(("localhost", port)) != 0:
+                return port
+    raise RuntimeError("No free port found in range.")
+
 def restore_browser(browser, windows, exe):
     """Restore browser windows and their tabs"""
     print(exe)
@@ -143,6 +154,8 @@ def restore_browser(browser, windows, exe):
         
         # Check if debugging port is in use
         debugging_port = window.get('debuggingPort')
+        if debugging_port is None:
+            debugging_port = find_free_port()
         if is_port_in_use(debugging_port):
             print(f"Error: Debugging port {debugging_port} is already in use", file=sys.stderr)
             continue

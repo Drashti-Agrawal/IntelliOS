@@ -1,5 +1,5 @@
 {
-  "saved_at": "2025-11-03T14:11:12.400605+05:30",
+  "saved_at": "2025-11-06T14:25:31.770252+05:30",
   "user": "jaypa",
   "browsers": [
     {
@@ -7,18 +7,18 @@
       "exe": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
       "windows": [
         {
-          "profile": "D:\\Major\\IntelliOS\\Configure_browsers\\profile_copies\\profile_copy_20251103_134624",
-          "debuggingPort": 9223,
+          "profile": "D:\\Major\\IntelliOS\\Configure_browsers\\profile_copies\\profile_copy_20251106_133157",
+          "debuggingPort": 9222,
           "tabs": [
             {
-              "id": "A89C3D090E0E20748D43BE144DB1E38E",
+              "id": "3017E04F8E7883305C5A83429E8E1B0E",
               "url": "https://monkeytype.com/",
               "title": "Monkeytype | A minimalistic, customizable typing test",
               "description": "",
-              "tab_launched_at": "2025-11-03T14:10:41.117100+05:30"
+              "tab_launched_at": "2025-11-06T14:25:05.050400+05:30"
             }
           ],
-          "window_launched_at": "2025-11-03T13:46:24+05:30"
+          "window_launched_at": "2025-11-06T13:31:57+05:30"
         }
       ]
     }

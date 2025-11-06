@@ -158,7 +158,7 @@
                     {
                         "port": "9222",
                         "launched_at": "2025-11-03T13:45:27+05:30",
-                        "status": "active"
+                        "status": "inactive"
                     }
                 ]
             },
@@ -168,6 +168,26 @@
                     {
                         "port": "9223",
                         "launched_at": "2025-11-03T13:46:24+05:30",
+                        "status": "active"
+                    }
+                ]
+            },
+            {
+                "profile": "D:\\Major\\IntelliOS\\Configure_browsers\\profile_copies\\profile_copy_20251104_195558",
+                "instances": [
+                    {
+                        "port": "9222",
+                        "launched_at": "2025-11-04T19:55:58+05:30",
+                        "status": "inactive"
+                    }
+                ]
+            },
+            {
+                "profile": "D:\\Major\\IntelliOS\\Configure_browsers\\profile_copies\\profile_copy_20251106_133157",
+                "instances": [
+                    {
+                        "port": "9222",
+                        "launched_at": "2025-11-06T13:31:57+05:30",
                         "status": "active"
                     }
                 ]

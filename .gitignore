@@ -55,3 +55,6 @@ ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 node_modules
+
+#Browser profiles
+Configure_browser/profile_copies/

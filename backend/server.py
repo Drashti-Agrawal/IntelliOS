@@ -60,6 +60,13 @@ if LAST_CAPTURED is None:
 # Define response models
 
 
+class CaptureResponse(BaseModel):
+    status: str
+    message: str
+    state: Optional[Dict[str, Any]] = None
+
+class RestoreRequest(BaseModel):
+    state: Optional[Dict[str, Any]] = None
 
 class RestoreResponse(BaseModel):
     status: str
@@ -67,10 +74,6 @@ class RestoreResponse(BaseModel):
     details: Optional[Dict[str, bool]] = None
 
 
-class CaptureResponse(BaseModel):
-    status: str
-    message: str
-    state: Optional[Dict[str, Any]] = None
     
 
 
@@ -93,7 +96,7 @@ async def create_shortcuts():
         raise HTTPException(status_code=500, detail=f"Error creating shortcuts : {str(e)}")
 
 # State Restoration endpoints
-@app.post("/api/capture", response_model=CaptureResponse, tags=["State Management"])
+@app.get("/api/capture", response_model=CaptureResponse, tags=["State Management"])
 async def capture_state():
     """
     Capture current system state and save it to a file
@@ -189,8 +192,8 @@ async def capture_state():
             detail=f"Error capturing state: {str(e)}"
         )
 
-@app.post("/api/restore", response_model=RestoreResponse, tags=["State Management"])
-async def restore_state():
+@app.post("/api/restore", response_model=RestoreResponse, tags=["State Management"], )
+async def restore_state(request:dict):
     """
     Restore system state from a state file
     
@@ -204,30 +207,35 @@ async def restore_state():
         HTTPException: If there are any errors during the restoration process
     """
     try:
-        state_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..\\State\\state.json"))
+        # state_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..\\State\\state.json"))
 
-        if not os.path.exists(state_file_path):
-            raise HTTPException(
-                status_code=404,
-                detail=f"State file not found: {state_file_path}"
-            )
+        # if not os.path.exists(state_file_path):
+        #     raise HTTPException(
+        #         status_code=404,
+        #         detail=f"State file not found: {state_file_path}"
+        #     )
 
-        # Read state file
-        state = {}
-        try:
-            with open(state_file_path, 'r', encoding='utf-8') as f:
-                state = json.load(f)
-        except Exception as e:
-            logger.error(f"Error reading state file: {e}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error reading state file: {str(e)}"
-            )
+        # # Read state file
+        # state = {}
+        # try:
+        #     with open(state_file_path, 'r', encoding='utf-8') as f:
+        #         state = json.load(f)
+        # except Exception as e:
+        #     logger.error(f"Error reading state file: {e}")
+        #     raise HTTPException(
+        #         status_code=500,
+        #         detail=f"Error reading state file: {str(e)}"
+        #     )
+
+        state = request
+        print(state)
 
         restoration_details = {
             "browsers_restored": False,
             "apps_restored": False
         }
+
+        
 
         # Restore browsers
         try:
