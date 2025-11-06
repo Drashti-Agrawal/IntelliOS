@@ -73,15 +73,139 @@ class RestoreResponse(BaseModel):
     message: str
     details: Optional[Dict[str, bool]] = None
 
+class CreateWorkspaceRequest(BaseModel):
+    workspace_name: str
+    state: Dict[str, Any]
 
-    
+class CreateWorkspaceResponse(BaseModel):
+    status: str
+    message: str
 
+class GetWorkspacesResponse(BaseModel):
+    status: str
+    workspaces: Dict[str, Dict[str, Any]]
+
+class DeleteWorkspaceRequest(BaseModel):
+    workspace_name: str
+
+class DeleteWorkspaceResponse(BaseModel):
+    status: str
+    message: str
 
 # Routes
 @app.get("/", tags=["Root"])
 async def read_root():
     """Root endpoint - health check"""
     return {"status": "online", "message": "IntelliOS API is running"}
+
+@app.post("/api/workspace", response_model=CreateWorkspaceResponse, tags=["Workspace Management"])
+async def create_update_workspace(request: dict):
+    """
+    Create or update a workspace with the given name and state
+    
+    Args:
+        request: {"workspace_name": str, "state": dict}
+        
+    Returns:
+        CreateWorkspaceResponse with status and message
+    """
+    try:
+        # Create Workspaces directory if it doesn't exist
+        workspaces_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..\\State\\Workspaces"))
+        os.makedirs(workspaces_dir, exist_ok=True)
+        
+        # Create workspace file path
+        workspace_file = os.path.join(workspaces_dir, f"{request.workspace_name}.json")
+        
+        # Write state to workspace file
+        with open(workspace_file, "w", encoding="utf-8") as f:
+            json.dump(request.state, f, indent=2, ensure_ascii=False)
+            
+        return CreateWorkspaceResponse(
+            status="success",
+            message=f"Workspace '{request.workspace_name}' created/updated successfully"
+        )
+            
+    except Exception as e:
+        logger.error(f"Error creating workspace: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error creating workspace: {str(e)}"
+        )
+
+@app.get("/api/workspaces", response_model=GetWorkspacesResponse, tags=["Workspace Management"])
+async def get_all_workspaces():
+    """
+    Get all workspaces and their states
+    
+    Returns:
+        GetWorkspacesResponse containing a dictionary of workspace names and their states
+    """
+    try:
+        workspaces_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..\\State\\Workspaces"))
+        if not os.path.exists(workspaces_dir):
+            return GetWorkspacesResponse(
+                status="success",
+                workspaces={}
+            )
+            
+        workspaces = {}
+        for filename in os.listdir(workspaces_dir):
+            if filename.endswith('.json'):
+                workspace_name = filename[:-5]  # Remove .json extension
+                workspace_file = os.path.join(workspaces_dir, filename)
+                
+                with open(workspace_file, 'r', encoding='utf-8') as f:
+                    workspaces[workspace_name] = json.load(f)
+                    
+        return GetWorkspacesResponse(
+            status="success",
+            workspaces=workspaces
+        )
+            
+    except Exception as e:
+        logger.error(f"Error getting workspaces: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error getting workspaces: {str(e)}"
+        )
+
+@app.delete("/api/workspace", response_model=DeleteWorkspaceResponse, tags=["Workspace Management"])
+async def delete_workspace(request: DeleteWorkspaceRequest):
+    """
+    Delete a workspace with the given name
+    
+    Args:
+        request: DeleteWorkspaceRequest containing workspace_name
+        
+    Returns:
+        DeleteWorkspaceResponse with status and message
+    """
+    try:
+        workspaces_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..\\State\\Workspaces"))
+        workspace_file = os.path.join(workspaces_dir, f"{request.workspace_name}.json")
+        
+        if not os.path.exists(workspace_file):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Workspace '{request.workspace_name}' not found"
+            )
+            
+        os.remove(workspace_file)
+        
+        return DeleteWorkspaceResponse(
+            status="success",
+            message=f"Workspace '{request.workspace_name}' deleted successfully"
+        )
+            
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error deleting workspace: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error deleting workspace: {str(e)}"
+        )
     
 @app.get("/api/create_shortcuts")
 async def create_shortcuts():
