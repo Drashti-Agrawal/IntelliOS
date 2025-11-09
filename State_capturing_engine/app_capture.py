@@ -1,12 +1,17 @@
 """
 app_capture.py - Module for capturing application states
 """
+import json
 import os
 import psutil
 import win32com.client
 import pythoncom
 import win32process
 import win32gui
+import urllib.parse
+import pathlib
+
+VSCODE_DATADIR = os.path.join(r"C:\Users", os.environ.get("USERNAME", ""), r"AppData\Roaming\Code\User\globalStorage\storage.json")
 
 def get_main_window_info(pid):
     """Get window information for a process"""
@@ -136,6 +141,28 @@ def get_onenote_files():
             pythoncom.CoUninitialize()
     except Exception:
         return []
+    
+def get_vscode_workspaces():
+    try:
+        data={}
+        with open(VSCODE_DATADIR, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        workspaces = []
+        data = data.get("windowsState")
+        print("Loaded data : ",data)
+        lastActiveWindow = str(urllib.parse.unquote(data.get("lastActiveWindow").get("folder")))[8:]
+        print("Last active window folder : ",lastActiveWindow)
+        workspaces.append(lastActiveWindow)
+        for window in data.get("openedWindows", []):
+            folder = str(urllib.parse.unquote(window.get("folder")))[8:]
+            if folder:
+                print("Found folder : ",folder)
+                workspaces.append(folder)
+        return workspaces
+
+
+    except Exception as e:
+        print("Error loading VSCode workspaces :", str(e))
 
 def capture_app_states():
     """Capture states of all supported applications"""
@@ -146,7 +173,7 @@ def capture_app_states():
         "AcroRd32.exe","vlc.exe","obs64.exe","photoshop.exe","idea64.exe","pycharm64.exe"
     ]
 
-    office_apps = {
+    handlers = {
         "WINWORD.EXE": get_word_docs,
         "EXCEL.EXE": get_excel_books,
         "POWERPNT.EXE": get_powerpoint_pres,
@@ -154,25 +181,28 @@ def capture_app_states():
         "MSPUB.EXE": get_publisher_docs,
         "MSACCESS.EXE": get_access_dbs,
         "WINPROJ.EXE": get_project_files,
-        "ONENOTE.EXE": get_onenote_files
+        "ONENOTE.EXE": get_onenote_files,
+        "Code.exe": get_vscode_workspaces
     }
 
     apps = []
+    handled = set()
     for proc in psutil.process_iter(['pid', 'name', 'exe', 'cmdline']):
         name = proc.info['name']
         if name not in whitelist:
             continue
         
-        if name in office_apps.keys():
-            files = office_apps[name]()
-            if files:
-                apps.append({
-                    "name": name,
-                    "pid": proc.info['pid'],
-                    "exe": proc.info['exe'],
-                    "cmdline": ' '.join(proc.info['cmdline']) if proc.info['cmdline'] else '',
-                    "files": list(set(files)),
-                    "windowInfo": get_main_window_info(proc.info['pid'])
-                })
+        if name in handlers.keys() and name not in handled:
+            files = handlers[name]()
+            apps.append({
+                "name": name,
+                "pid": proc.info['pid'],
+                "exe": proc.info['exe'],
+                "cmdline": ' '.join(proc.info['cmdline']) if proc.info['cmdline'] else '',
+                "items": list(set(files)),
+                "windowInfo": get_main_window_info(proc.info['pid'])
+            })
+            handled.add(name)
 
     return sorted(apps, key=lambda x: x["name"])
+print(capture_app_states())
