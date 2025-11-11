@@ -21,25 +21,30 @@ try:
     from State_capturing_engine.browser_capture import capture_browser_states
     from State_capturing_engine.app_capture import capture_app_states
     STATE_CAPTURE_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     logger = logging.getLogger(__name__)
-    logger.warning("State_capturing_engine modules not available")
+    logger.info("State_capturing_engine modules not available - capture functionality disabled")
+    logger.debug(f"State capture import error: {e}")
     STATE_CAPTURE_AVAILABLE = False
     
 try:
     from Restoration_engine.browser_restore import restore_browsers
     from Restoration_engine.app_restore import restore_apps
     RESTORATION_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     logger = logging.getLogger(__name__)
-    logger.warning("Restoration_engine modules not available")
+    logger.info("Restoration_engine modules not available - restoration functionality disabled")
+    logger.debug(f"Restoration import error: {e}")
     RESTORATION_AVAILABLE = False
 
 # Load environment variables
 load_dotenv()
 
 # Add parent directory to path to import IntelliOS modules
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+backend_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(backend_dir)
+sys.path.insert(0, project_root)
+sys.path.insert(0, backend_dir)
 
 # Import IntelliOS modules with error handling
 import importlib
@@ -85,6 +90,9 @@ except ImportError as e:
     parse_with_llm = lambda *args, **kwargs: None
 
 try:
+    # Allow disabling vector DB via environment variable for quick runs/tests
+    if os.environ.get("DISABLE_VECTOR_DB") == "1":
+        raise ImportError("vector_db disabled via DISABLE_VECTOR_DB=1")
     from vector_db import VectorDBManager
     SERVICES_AVAILABLE["vector_db"] = True
 except ImportError as e:
@@ -201,6 +209,7 @@ class CaptureResponse(BaseModel):
     message: str
     saved_at: str
     file_path: str
+    state: Optional[Dict[str, Any]] = None
     
 # Local DDNA models
 class LocalDDNATopicsResponse(BaseModel):
@@ -589,7 +598,8 @@ async def capture_state(request: CaptureRequest):
             status="success",
             message="State captured successfully",
             saved_at=state["saved_at"],
-            file_path=request.state_file_path
+            file_path=request.state_file_path,
+            state=state
         )
             
     except Exception as e:
@@ -978,5 +988,5 @@ async def get_local_ddna_stats():
 
 if __name__ == "__main__":
     # Run the server
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("server:app", host="0.0.0.0", port=port, reload=True)
+    port = int(os.environ.get("PORT", 8001))
+    uvicorn.run("server:app", port=8001, reload=True)

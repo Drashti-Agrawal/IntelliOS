@@ -1,27 +1,79 @@
+import json
+import logging
+import os
+import sys
+from typing import Dict, List, Optional, Tuple
+from dotenv import load_dotenv
+
+import requests
+
+# Load environment variables
+load_dotenv()
+
+
+FLOW_DIR = os.path.dirname(os.path.abspath(__file__))
+BACKEND_DIR = os.path.dirname(FLOW_DIR)
+PROJECT_ROOT = os.path.dirname(BACKEND_DIR)
+
+CORE_DIR = os.path.join(BACKEND_DIR, 'core')
+STATE_DIR = os.path.join(PROJECT_ROOT, 'State')
+STATE_CAPTURE_DIR = os.path.join(PROJECT_ROOT, 'State_capturing_engine')
+LOCAL_DDNA_DIR = os.path.join(BACKEND_DIR, 'local_ddna')
+
+for path in (PROJECT_ROOT, CORE_DIR, BACKEND_DIR, STATE_CAPTURE_DIR):
+    if os.path.exists(path) and path not in sys.path:
+        sys.path.insert(0, path)
+
+os.makedirs(STATE_DIR, exist_ok=True)
+
+from logging_config import setup_logging
+
+try:
+    from ddna_manager import DDNAManager
+except Exception:
+    DDNAManager = None
+
+try:
+    from vector_db import VectorDBManager
+except Exception:
+    VectorDBManager = None
+
+logger = setup_logging()
+
 TOPIC_FILES = [
     'security', 'system_startup', 'system_shutdown', 'service_operations', 'application_lifecycle',
     'network_activity', 'driver_operations', 'hardware_events', 'updates', 'user_sessions',
     'disk_activity', 'performance_issues', 'system_errors', 'application_errors', 'maintenance'
 ]
 
-def _append_log_to_topic(topic: str, log: dict):
-    """Append log to the correct topic file in local_ddna."""
+
+def _state_default_path() -> str:
+    return os.path.join(STATE_DIR, 'state.json')
+
+
+def _state_to_logs(state: dict) -> List[dict]:
+    sys.path.insert(0, STATE_CAPTURE_DIR)
+    try:
+        from state_processor import state_to_logs
+        return state_to_logs(state)
+    except ImportError:
+        logger.error("Failed to import state_processor module")
+        return []
+
+
+def _append_log_to_topic(topic: str, log: dict) -> None:
     fname = os.path.join(LOCAL_DDNA_DIR, f'{topic}.json')
     try:
-        # Ensure the directory exists
         os.makedirs(os.path.dirname(fname), exist_ok=True)
-        
-        # Create a streamlined version of the log with only relevant information
+
         streamlined_log = {
             'event_type': log.get('event_type'),
             'summary': log.get('summary'),
             'saved_at': log.get('saved_at'),
-            'timestamp': log.get('saved_at')  # Adding timestamp field for consistency
+            'timestamp': log.get('saved_at')
         }
-        
-        # Add event-specific data
+
         if log.get('event_type') == 'app_state':
-            # Handle app state fields regardless of structure
             streamlined_log.update({
                 'app_name': log.get('app_name'),
                 'exe_path': log.get('app_info', {}).get('exe_path') if 'app_info' in log else log.get('exe_path'),
@@ -30,7 +82,6 @@ def _append_log_to_topic(topic: str, log: dict):
                 'captured_at': log.get('app_info', {}).get('captured_at') if 'app_info' in log else log.get('captured_at')
             })
         elif log.get('event_type') == 'browser_tab':
-            # Handle browser tab fields regardless of structure
             streamlined_log.update({
                 'app_name': log.get('app_name'),
                 'browser_name': log.get('browser_name'),
@@ -44,473 +95,282 @@ def _append_log_to_topic(topic: str, log: dict):
                 'browser_name': log.get('browser_name'),
                 'tab_count': log.get('tab_count')
             })
-            
-        # Add only the relevant topic match
+
         for topic_match in log.get('topic_matches', []):
             if topic_match.get('topic') == topic:
                 streamlined_log['topic_score'] = topic_match.get('score')
                 streamlined_log['topic_description'] = topic_match.get('description')
                 break
-        
-        # Read existing logs
+
         if os.path.exists(fname):
-            with open(fname, 'r', encoding='utf-8') as f:
-                arr = json.load(f)
+            with open(fname, 'r', encoding='utf-8') as file:
+                entries = json.load(file)
         else:
-            arr = []
-            
-        arr.append(streamlined_log)
-        
-        with open(fname, 'w', encoding='utf-8') as f:
-            json.dump(arr, f, indent=2)
-        logger.info(f"Added streamlined log to topic file {topic}")
-    except Exception as e:
-        logger.error(f"Failed to append to topic file {fname}: {e}")
+            entries = []
 
-def _get_log_topics(log: dict) -> list:
-    """Extract only the highest scoring topic from log's topic_matches (if present)."""
-    # Try to import all topics from topics.py
-    all_topics = set(TOPIC_FILES)  # Start with existing TOPIC_FILES
+        entries.append(streamlined_log)
+
+        with open(fname, 'w', encoding='utf-8') as file:
+            json.dump(entries, file, indent=2)
+        logger.info("Added streamlined log to topic file %s", topic)
+    except Exception as exc:
+        logger.error("Failed to append to topic file %s: %s", fname, exc)
+
+
+def _get_log_topics(log: dict) -> List[str]:
+    all_topics = set(TOPIC_FILES)
     try:
-        # Import all topics dynamically
-        sys.path.insert(0, BACKEND_DIR)
         from topics import TOPICS
-        all_topics.update(TOPICS.keys())  # Add all topics from TOPICS
+        all_topics.update(TOPICS.keys())
     except ImportError:
-        # Fallback to just existing topics if import fails
         pass
-    
-    # Add workspace topics manually to ensure they're included
-    workspace_topics = [
-        'web_development', 'machine_learning', 'dsa_coding', 'data_analytics', 
+
+    all_topics.update({
+        'web_development', 'machine_learning', 'dsa_coding', 'data_analytics',
         'web_design', 'extracurricular', 'web_surfing'
-    ]
-    all_topics.update(workspace_topics)
-    
-    # Find the topic with the highest score
+    })
+
     best_topic = None
-    highest_score = -1
-    
-    for t in log.get('topic_matches', []):
-        if t.get('topic') and t.get('score', 0) > highest_score:
-            highest_score = t.get('score', 0)
-            best_topic = t.get('topic')
-    
+    highest_score = -1.0
+    for topic_match in log.get('topic_matches', []):
+        score = topic_match.get('score', 0.0)
+        if topic_match.get('topic') and score > highest_score:
+            highest_score = score
+            best_topic = topic_match.get('topic')
+
     return [best_topic] if best_topic else []
-import os
-import sys
-import json
-import time
-import logging
-import datetime
-from typing import Optional
 
-# Add necessary paths to sys.path for imports
-FLOW_DIR = os.path.dirname(os.path.abspath(__file__))
-BACKEND_DIR = os.path.dirname(FLOW_DIR)
-PROJECT_ROOT = os.path.dirname(BACKEND_DIR)
 
-# Define all necessary paths
-CORE_DIR = os.path.join(BACKEND_DIR, 'core')
-STATE_DIR = os.path.join(PROJECT_ROOT, 'State')
-STATE_CAPTURE_DIR = os.path.join(PROJECT_ROOT, 'State_capturing_engine')
-LOCAL_DDNA_DIR = os.path.join(BACKEND_DIR, 'local_ddna')
-
-# Print paths for debugging
-print(f"Project paths:")
-print(f"PROJECT_ROOT: {PROJECT_ROOT}")
-print(f"STATE_DIR: {STATE_DIR}")
-print(f"STATE_CAPTURE_DIR: {STATE_CAPTURE_DIR}")
-
-# Add paths to sys.path in correct order
-paths_to_add = [PROJECT_ROOT, CORE_DIR, BACKEND_DIR, STATE_CAPTURE_DIR]
-for path in paths_to_add:
-    if os.path.exists(path) and path not in sys.path:
-        sys.path.insert(0, path)
-        print(f"Added to sys.path: {path}")
-    elif not os.path.exists(path):
-        print(f"Warning: Path does not exist: {path}")
-
-# Ensure State directory exists
-if not os.path.exists(STATE_DIR):
-    try:
-        os.makedirs(STATE_DIR)
-        print(f"Created State directory: {STATE_DIR}")
-    except Exception as e:
-        print(f"Error creating State directory: {e}")
-
-from logging_config import setup_logging
-
-# best-effort imports; missing modules are handled gracefully at runtime
-try:
-    from ddna_manager import DDNAManager
-except Exception:
-    DDNAManager = None
-
-try:
-    from vector_db import VectorDBManager
-except Exception:
-    VectorDBManager = None
-
-logger = setup_logging()
-
-def _state_default_path() -> str:
-    """Returns the default path for the state.json file"""
-    return os.path.join(STATE_DIR, 'state.json')
-
-def _state_to_logs(state: dict) -> list:
-    """Convert state to log entries using state_processor module."""
-    sys.path.insert(0, STATE_CAPTURE_DIR)
-    try:
-        from state_processor import state_to_logs
-        return state_to_logs(state)
-    except ImportError:
-        logger.error("Failed to import state_processor module")
-        # Fallback to empty list
-        return []
-
-    if not logs:
-        logs.append({'event_type': 'system_state', 'summary': state.get('summary') or f"State saved_at {state.get('saved_at')}"})
-    return logs
-
-def _try_import_module(names: list):
+def _try_import_module(names: List[str]):
     import importlib
-    for n in names:
+
+    for name in names:
         try:
-            return importlib.import_module(n)
+            return importlib.import_module(name)
         except Exception:
             continue
     return None
 
-def _try_call(module, fn_names: list, *args, **kwargs):
+
+def _try_call(module, fn_names: List[str], *args, **kwargs):
     if not module:
         return None
-    for n in fn_names:
-        fn = getattr(module, n, None)
+    for name in fn_names:
+        fn = getattr(module, name, None)
         if callable(fn):
             try:
                 return fn(*args, **kwargs)
-            except Exception as e:
-                logger.exception("helper call failed: %s.%s", getattr(module, '__name__', '?'), n)
+            except Exception:
+                logger.exception("helper call failed: %s.%s", getattr(module, '__name__', '?'), name)
     return None
 
 
 def capture_current_state(state_path: str) -> bool:
-    """Capture current system state using app and browser capture modules.
-    Returns True if capture was successful, False otherwise."""
-    try:
-        logger.info("Starting state capture...")
-        
-        # Import required modules
-        if not os.path.exists(STATE_CAPTURE_DIR):
-            logger.error("State capturing engine directory not found at: %s", STATE_CAPTURE_DIR)
-            return False
+    logger.info("capture_current_state: monitoring capture is currently disabled")
+    return False
 
-        sys.path.insert(0, STATE_CAPTURE_DIR)
-        try:
-            from app_capture import capture_app_states
-            from browser_capture import capture_browser_states
-            from browser_launcher import launch_browser
-            logger.info("Successfully imported capture modules")
-        except ImportError as e:
-            logger.error("Failed to import capture modules from %s: %s", STATE_CAPTURE_DIR, str(e))
-            return False
-            
-        # Launch browsers with debugging enabled
-        browsers_to_launch = [
-            ('chrome', 'Default'),
-            ('edge', 'Default')
-        ]
-        
-        browser_ports = {}
-        for browser, profile in browsers_to_launch:
-            try:
-                if launch_browser(browser, profile):
-                    logger.info(f"Successfully launched {browser} for state capture")
-                    # Wait for browser to initialize
-                    time.sleep(2)
-            except Exception as e:
-                logger.warning(f"Failed to launch {browser}: {e}")
-        
-        # Create fresh browser configuration with connection verification
-        logger.info("Setting up browser configuration...")
-        chrome_port = 9222
-        
-        # Assume Chrome is available and let browser_capture handle the connection check
-        import requests
-        import socket
-        chrome_available = True  # Assume it's available and let browser_capture handle the details
-        
-        logger.info(f"Assuming Chrome is available on port {chrome_port}")
-        
-        # First define browser_data and then use it
-        browser_data = {
-            "chrome": {
-                "exe": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-                "profiles": [
-                    {
-                        "profile": "Default",
-                        "instances": [{"port": chrome_port, "status": "active"}]
-                    }
-                ]
-            }
-        }
-        
-        logger.info(f"Set up browser data with Chrome port {chrome_port} marked as active")
-        
-        if chrome_available:
-            logger.info(f"Chrome debugging port {chrome_port} is active and responding")
-            
-        # Capture states
-        # Capture app states with detailed logging
-        try:
-            logger.info("Capturing application states...")
-            app_states = capture_app_states()
-            if app_states:
-                logger.info(f"Successfully captured {len(app_states)} application states")
-                for app in app_states:
-                    logger.debug(f"Captured app: {app.get('name')} with {len(app.get('windows', []))} windows")
-            else:
-                logger.warning("No application states were captured")
-        except Exception as e:
-            logger.error("Failed to capture app states: %s", str(e))
-            app_states = []
 
-        # Capture browser states - always attempt with multiple fallbacks
-        try:
-            logger.info("Capturing browser states...")
-            
-            # First attempt with provided browser data
-            browser_states = capture_browser_states(browser_data)
-            
-            # Always try direct connection as well to be thorough
-            logger.info("Also trying direct connection regardless of previous results")
-            direct_browser_states = capture_browser_states(None)  # Will use the fallback to direct port access
-            
-            # Merge results if both methods returned something
-            if direct_browser_states and any(b.get('windows', []) for b in direct_browser_states):
-                if not browser_states:
-                    browser_states = direct_browser_states
-                else:
-                    # Append any new browsers from direct capture
-                    for direct_browser in direct_browser_states:
-                        # Check if this browser is already in our results
-                        browser_exists = False
-                        for existing_browser in browser_states:
-                            if existing_browser.get('browser') == direct_browser.get('browser'):
-                                browser_exists = True
-                                # Merge windows if needed
-                                existing_browser['windows'].extend(direct_browser.get('windows', []))
-                                break
-                        
-                        if not browser_exists:
-                            # Add as a new browser
-                            browser_states.append(direct_browser)
-            
-            # Log the results
-            if browser_states and any(b.get('windows', []) for b in browser_states):
-                logger.info(f"Successfully captured browser states")
-                for browser in browser_states:
-                    windows = browser.get('windows', [])
-                    tabs = sum(len(w.get('tabs', [])) for w in windows)
-                    logger.info(f"Captured {browser.get('browser')}: {len(windows)} windows, {tabs} tabs")
-            else:
-                logger.warning("No browser states captured through DevTools Protocol - window title fallback will be used")
-        
-        except Exception as e:
-            logger.error("Failed to capture browser states: %s", str(e))
-            browser_states = []
-        
-        # Combine states with timestamp and summary
-        current_state = {
-            'saved_at': datetime.datetime.now().strftime('%Y%m%d_%H%M%S'),
-            'apps': app_states or [],
-            'browsers': browser_states or [],
-            'summary': f"Captured {len(app_states or [])} apps and {len(browser_states or [])} browser states"
-        }
-        
-        # Save state
-        os.makedirs(os.path.dirname(state_path), exist_ok=True)
-        with open(state_path, 'w', encoding='utf-8') as f:
-            json.dump(current_state, f, indent=2)
-            
-        logger.info("Successfully saved state with %d apps and %d browser states", 
-                   len(app_states or []), len(browser_states or []))
-        return True
-    except ImportError as e:
-        logger.error("Failed to import state capturing modules: %s", str(e))
-        return False
-    except Exception as e:
-        logger.error("Failed to capture system state: %s", str(e))
-        return False
+# File-based state helpers removed: state will be provided via API or direct logs input
 
-def handle_latest_logs(state_path: Optional[str] = None, workspace_name: str = 'autocaptured', run_capture_if_missing: bool = True) -> dict:
-    """Minimal orchestration: ensure state exists, convert -> logs, index (vector DB), push dDNA, return summary.
 
-    - Uses available core helpers when present (VectorDBManager, DDNAManager).
-    - Attempts to call state-capture helpers if state missing.
-    - Does NOT trigger restoration (user-triggered).
-    """
-    logger.info("handle_latest_logs: start")
-
-    state_path = state_path or _state_default_path()
-    
-    # Force a new capture every time
-    if os.path.exists(state_path):
-        try:
-            os.remove(state_path)
-            logger.info("Removed existing state file for fresh capture")
-        except Exception as e:
-            logger.error("Failed to remove existing state file: %s", str(e))
-    
-    # Always capture new state
-    if not capture_current_state(state_path):
-        return {
-            'status': 'error',
-            'reason': 'state_capture_failed',
-            'message': 'Failed to capture system state. Check logs for details.',
-            'path': state_path
-        }
-    if not os.path.exists(state_path):
-        logger.error("state still missing after capture attempt: %s", state_path)
-        return {'status': 'error', 'reason': 'state_file_missing', 'path': state_path}
-
-    try:
-        with open(state_path, 'r', encoding='utf-8') as f:
-            state = json.load(f)
-    except Exception as e:
-        logger.exception("failed to read state")
-        return {'status': 'error', 'reason': 'read_failed', 'error': str(e)}
-
-    # Step 1: Convert state to logs
-    try:
-        logs = _state_to_logs(state)
-        if not logs:
-            logger.error("No logs generated from state")
-            return {'status': 'error', 'reason': 'no_logs_generated', 'message': 'State conversion produced no logs'}
-        logger.info("converted state -> %d logs", len(logs))
-    except Exception as e:
-        logger.exception("Failed to convert state to logs")
-        return {'status': 'error', 'reason': 'state_conversion_failed', 'error': str(e)}
-
-    # Step 2: Process with Vector DB
+def _process_vector_db(logs: List[dict]) -> Tuple[List[dict], Dict[str, Optional[str]]]:
     enriched = logs
-    vector_db_status = {'processed': False, 'error': None}
-    if VectorDBManager:
-        try:
-            vdb = VectorDBManager()
-            if not hasattr(vdb, 'add_logs_with_topic_matches') and \
-               not hasattr(vdb, 'add_logs') and \
-               not hasattr(vdb, 'upsert'):
-                raise AttributeError("Vector DB manager lacks required methods")
+    status: Dict[str, Optional[str]] = {'processed': False, 'error': None}
 
-            # Process logs in vector DB with proper method
-            if hasattr(vdb, 'add_logs_with_topic_matches'):
-                enriched = vdb.add_logs_with_topic_matches(logs)
-            elif hasattr(vdb, 'add_logs'):
-                enriched = vdb.add_logs(logs)
-            elif hasattr(vdb, 'upsert'):
-                vdb.upsert(logs)
-            
-            vector_db_status['processed'] = True
-            logger.info("vector DB: processed %d logs", len(enriched))
-        except Exception as e:
-            vector_db_status['error'] = str(e)
-            logger.exception("vector DB processing failed")
-            # Continue with unenriched logs rather than failing completely
+    if not VectorDBManager:
+        return enriched, status
 
-    # Step 3: Enrich with similarity scoring
     try:
-        for l in enriched:
-            topics = l.get('topic_matches') or []
-            top_score = max((t.get('score', 0.0) for t in topics), default=0.0)
-            l['similarity'] = round(float(top_score), 4)
-            l['segregation'] = bool(top_score >= 0.75 or any('security' in (t.get('description') or '').lower() for t in topics))
-    except Exception as e:
-        logger.exception("Failed to calculate similarity scores")
-        return {'status': 'error', 'reason': 'similarity_calculation_failed', 'error': str(e)}
+        vdb = VectorDBManager()
+        if hasattr(vdb, 'add_logs_with_topic_matches'):
+            enriched = vdb.add_logs_with_topic_matches(logs)
+        elif hasattr(vdb, 'add_logs'):
+            enriched = vdb.add_logs(logs)
+        elif hasattr(vdb, 'upsert'):
+            vdb.upsert(logs)
+        else:
+            raise AttributeError('Vector DB manager lacks required methods')
+        status['processed'] = True
+        logger.info('vector DB: processed %d logs', len(enriched))
+    except Exception as exc:
+        status['error'] = str(exc)
+        logger.exception('vector DB processing failed')
 
-    # Step 4: Push to dDNA
-    ddna_status = {'pushed': False, 'error': None}
-    if DDNAManager:
-        try:
-            ddna = DDNAManager()
-            if not hasattr(ddna, 'create_workspace_ddna') and not hasattr(ddna, 'push'):
-                raise AttributeError("DDNA manager lacks required methods")
+    return enriched, status
 
-            if hasattr(ddna, 'create_workspace_ddna'):
-                ddna.create_workspace_ddna(workspace_name, log_data=enriched)
-                ddna_status['pushed'] = True
-            elif hasattr(ddna, 'push'):
-                ddna.push(workspace_name, enriched)
-                ddna_status['pushed'] = True
-            logger.info("dDNA: push complete for workspace %s", workspace_name)
-        except Exception as e:
-            ddna_status['error'] = str(e)
-            logger.exception("dDNA push failed")
-            # Continue despite dDNA push failure
 
-    # Step 5: Notify restoration engine
-    restore_status = {'notified': False, 'error': None}
+def _augment_similarity(logs: List[dict]) -> None:
+    for log in logs:
+        topics = log.get('topic_matches') or []
+        top_score = max((topic.get('score', 0.0) for topic in topics), default=0.0)
+        log['similarity'] = round(float(top_score), 4)
+        log['segregation'] = bool(
+            top_score >= 0.75 or any('security' in (topic.get('description') or '').lower() for topic in topics)
+        )
+
+
+def _push_ddna(logs: List[dict], workspace_name: str) -> Dict[str, Optional[str]]:
+    status: Dict[str, Optional[str]] = {'pushed': False, 'error': None}
+    if not DDNAManager:
+        return status
+
     try:
-        re_mod = _try_import_module([
-            'Restoration_engine', 
-            'restoration_engine', 
-            'Restoration_engine.engine', 
+        ddna = DDNAManager()
+        if hasattr(ddna, 'create_workspace_ddna'):
+            ddna.create_workspace_ddna(workspace_name, log_data=logs)
+        elif hasattr(ddna, 'push'):
+            ddna.push(workspace_name, logs)
+        else:
+            raise AttributeError('DDNA manager lacks required methods')
+        status['pushed'] = True
+        logger.info('dDNA: push complete for workspace %s', workspace_name)
+    except Exception as exc:
+        status['error'] = str(exc)
+        logger.exception('dDNA push failed')
+
+    return status
+
+
+def _notify_restoration(logs: List[dict]) -> Dict[str, Optional[str]]:
+    status: Dict[str, Optional[str]] = {'notified': False, 'error': None}
+    try:
+        module = _try_import_module([
+            'Restoration_engine',
+            'restoration_engine',
+            'Restoration_engine.engine',
             'restoration_engine.api'
         ])
-        if re_mod:
-            restore_result = _try_call(re_mod, 
-                ['register_restore_candidates', 'queue_restore_candidates', 'mark_for_restore'], 
-                enriched
-            )
-            restore_status['notified'] = restore_result is not None
-        else:
-            restore_status['error'] = "Restoration engine module not found"
-    except Exception as e:
-        restore_status['error'] = str(e)
-        logger.exception("Failed to notify restoration engine")
+        if not module:
+            # Restoration is optional - don't treat missing modules as an error
+            return status
 
-    # Step 6: Push to local ddna by topic
-    local_ddna_status = {'pushed': False, 'error': None, 'topics_written': 0}
+        result = _try_call(module, ['register_restore_candidates', 'queue_restore_candidates', 'mark_for_restore'], logs)
+        status['notified'] = result is not None
+    except Exception as exc:
+        status['error'] = str(exc)
+        logger.debug('Failed to notify restoration engine: %s', exc)  # Changed to debug level
+
+    return status
+
+
+def _write_local_ddna(logs: List[dict]) -> Dict[str, Optional[int]]:
+    status: Dict[str, Optional[int]] = {'pushed': False, 'error': None, 'topics_written': 0}
     try:
-        # Ensure local_ddna directory exists
-        if not os.path.exists(LOCAL_DDNA_DIR):
-            os.makedirs(LOCAL_DDNA_DIR)
-            logger.info(f"Created local_ddna directory: {LOCAL_DDNA_DIR}")
-        
-        # Process each log
+        os.makedirs(LOCAL_DDNA_DIR, exist_ok=True)
         topics_written = set()
-        for log in enriched:
-            # Get topics for this log
+
+        for log in logs:
             topics = _get_log_topics(log)
-            
-            # If no topics found, use event_type as fallback topic
-            if not topics and log.get('event_type'):
-                event_type = log.get('event_type')
-                if event_type == 'browser_tab':
-                    topics = ['application_lifecycle']
-                elif event_type == 'app_state':
-                    topics = ['application_lifecycle']
-                elif event_type == 'browser_summary':
-                    topics = ['application_lifecycle']
-            
-            # Write log to each topic file
+            if not topics and log.get('event_type') in {'browser_tab', 'app_state', 'browser_summary'}:
+                topics = ['application_lifecycle']
+
             for topic in topics:
                 _append_log_to_topic(topic, log)
                 topics_written.add(topic)
-        
+
         if topics_written:
-            local_ddna_status['pushed'] = True
-            local_ddna_status['topics_written'] = len(topics_written)
-            logger.info(f"Wrote logs to {len(topics_written)} local ddna topic files")
+            status['pushed'] = True
+            status['topics_written'] = len(topics_written)
+            logger.info('Wrote logs to %d local ddna topic files', len(topics_written))
         else:
-            logger.warning("No topics found for logs, nothing written to local ddna")
-    except Exception as e:
-        local_ddna_status['error'] = str(e)
-        logger.exception("Failed to write logs to local ddna")
+            logger.warning('No topics found for logs, nothing written to local ddna')
+    except Exception as exc:
+        status['error'] = str(exc)
+        logger.exception('Failed to write logs to local ddna')
+
+    return status
+
+
+def handle_latest_logs(
+    logs: Optional[List[dict]] = None,
+    api_url: Optional[str] = None,
+    workspace_name: str = 'autocaptured'
+) -> dict:
+    logger.info('handle_latest_logs: start')
+
+    # If an API URL is provided, delegate to handle_remote_logs (reuse existing implementation)
+    if api_url:
+        return handle_remote_logs(api_url, workspace_name)
+    
+    # Use default API URL from environment if none provided and no logs given
+    if not logs and not api_url:
+        default_api_url = os.getenv('CAPTURE_API_URL')
+        if default_api_url:
+            return handle_remote_logs(default_api_url.rstrip('/') + '/api/capture', workspace_name)
         
-    # Return comprehensive status
+        # If no API URL configured, capture state directly
+        logger.info('No API URL configured, capturing state directly')
+        try:
+            # Import capture modules
+            sys.path.insert(0, STATE_CAPTURE_DIR)
+            from browser_capture import capture_browser_states
+            from app_capture import capture_app_states
+            
+            # Read browser ports file
+            browser_ports_file = os.path.join(FLOW_DIR, 'browser_ports.json')
+            browser_ports_data = {}
+            if os.path.exists(browser_ports_file):
+                with open(browser_ports_file, 'r', encoding='utf-8') as f:
+                    browser_ports_data = json.load(f)
+            
+            # Capture browser and app states
+            browsers = capture_browser_states(browser_ports_data)
+            raw_apps = capture_app_states()
+            
+            # Normalize app data
+            apps = []
+            for a in (raw_apps or []):
+                items = a.get('files') or a.get('items') or []
+                apps.append({
+                    'name': a.get('name'),
+                    'pid': a.get('pid'),
+                    'exe': a.get('exe'),
+                    'cmdline': a.get('cmdline'),
+                    'items': items,
+                    'windowInfo': a.get('windowInfo')
+                })
+            
+            # Create state object
+            state = {
+                "saved_at": json.dumps({}),  # Placeholder for timestamp
+                "user": os.environ.get("USERNAME", ""),
+                "browsers": browsers,
+                "apps": apps
+            }
+            
+            # Convert state to logs
+            logs = _state_to_logs(state)
+            logger.info(f'Captured state and converted to {len(logs)} logs')
+            
+        except Exception as exc:
+            logger.exception('Failed to capture state directly')
+            return {'status': 'error', 'reason': 'capture_failed', 'message': f'Failed to capture state: {exc}'}
+
+    # Require logs to be provided either directly or via api_url
+    if not logs:
+        return {'status': 'error', 'reason': 'no_logs_provided', 'message': 'No logs available to process'}
+
+    try:
+        logger.info('processing %d logs', len(logs))
+    except Exception as exc:
+        logger.exception('Failed to prepare logs for processing')
+        return {'status': 'error', 'reason': 'log_preparation_failed', 'error': str(exc)}
+
+    # Optionally enrich logs via vector DB before annotating local metadata.
+    enriched, vector_db_status = _process_vector_db(logs)
+
+    try:
+        # Add similarity and segregation fields derived from topic matches.
+        _augment_similarity(enriched)
+    except Exception as exc:
+        logger.exception('Failed to calculate similarity scores')
+        return {'status': 'error', 'reason': 'similarity_calculation_failed', 'error': str(exc)}
+
+    # Fan out the enriched logs to downstream systems and local storage.
+    ddna_status = _push_ddna(enriched, workspace_name)
+    restore_status = _notify_restoration(enriched)
+    local_ddna_status = _write_local_ddna(enriched)
+
     result = {
         'status': 'success',
         'workspace': workspace_name,
@@ -522,9 +382,50 @@ def handle_latest_logs(state_path: Optional[str] = None, workspace_name: str = '
         'logs': enriched,
     }
 
-    logger.info("handle_latest_logs: done")
+    logger.info('handle_latest_logs: done')
     return result
 
+
+def handle_remote_logs(api_url: str, workspace_name: str = 'autocaptured') -> dict:
+    payload = requests.get(api_url, timeout=60).json()
+    state = payload.get('state') or {}
+    logs = _state_to_logs(state) if state else []
+    
+    # Collect all enriched logs
+    all_enriched_logs = []
+    results = []
+    
+    for log in logs:
+        enriched, vector_db_status = _process_vector_db([log])
+        _augment_similarity(enriched)
+        ddna_status = _push_ddna(enriched, workspace_name)
+        restore_status = _notify_restoration(enriched)
+        local_ddna_status = _write_local_ddna(enriched)
+        
+        # Add enriched log to the list
+        if enriched:
+            all_enriched_logs.extend(enriched)
+        
+        results.append({
+            'vector_db': vector_db_status,
+            'ddna': ddna_status,
+            'restoration': restore_status,
+            'local_ddna': local_ddna_status,
+            'log': enriched[0] if enriched else log,
+        })
+    
+    return {
+        'status': payload.get('status', 'success') if all_enriched_logs else 'error',
+        'message': payload.get('message', f'Processed {len(all_enriched_logs)} logs'),
+        'workspace': workspace_name,
+        'count': len(results),
+        'n_logs': len(all_enriched_logs),
+        'logs': all_enriched_logs,  # Add logs key for UI compatibility
+        'results': results
+    }
+
+
 if __name__ == '__main__':
-    out = handle_latest_logs()
-    print(json.dumps(out, indent=2))
+    output = handle_latest_logs()
+    print(json.dumps(output, indent=2))
+

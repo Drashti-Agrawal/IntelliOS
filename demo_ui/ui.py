@@ -21,32 +21,11 @@ BACKEND_DIR = os.path.join(PROJECT_ROOT, 'backend')
 FLOW_DIR = os.path.join(BACKEND_DIR, 'flow')
 RESTORATION_DIR = os.path.join(PROJECT_ROOT, 'Restoration_engine')
 
-# Import restore_state if available
+# Flow pipeline and workspace metadata functionality
 if RESTORATION_DIR not in sys.path and os.path.exists(RESTORATION_DIR):
     sys.path.insert(0, RESTORATION_DIR)
 
-restore_state = None
-restore_available = False
-
-# Try multiple restore imports
-try:
-    from restore_state_mac import restore_state
-    restore_available = True
-    print("✅ Loaded restore_state_mac")
-except ImportError:
-    try:
-        from app_restore import restore_applications
-        from browser_restore import restore_browsers
-        restore_available = True
-        
-        # Create a combined restore function
-        def restore_state():
-            restore_applications()
-            restore_browsers()
-        
-        print("✅ Loaded app_restore and browser_restore")
-    except ImportError:
-        print("⚠️ No restore modules available")
+# Restoration functionality removed - UI focuses on flow pipeline and workspace metadata only
 
 # Import flow.py for continuous capture
 
@@ -97,8 +76,7 @@ def run_continuous_capture(delay=5):
         try:
             if FLOW_AVAILABLE and handle_latest_logs:
                 result = handle_latest_logs(
-                    workspace_name=f'live_capture_{st.session_state.capture_count}',
-                    run_capture_if_missing=True
+                    workspace_name=f'live_capture_{st.session_state.capture_count}'
                 )
                 st.session_state.capture_count += 1
                 st.session_state.last_capture_time = datetime.datetime.now().strftime('%H:%M:%S')
@@ -191,8 +169,7 @@ with col_right:
             with st.spinner("Capturing..."):
                 try:
                     result = handle_latest_logs(
-                        workspace_name=f'manual_capture_{int(time.time())}',
-                        run_capture_if_missing=True
+                        workspace_name=f'manual_capture_{int(time.time())}'
                     )
                     if result.get('status') == 'success':
                         st.success(f"✅ Captured {result.get('n_logs', 0)} logs!")
@@ -386,8 +363,8 @@ for ws in workspaces:
             else:
                 st.warning("Not Synced")
             if st.button(f"Restore {ws['name']}"):
-                restore_state()
-                st.success(f"Workspace '{ws['name']}' restored!")
+                st.warning("⚠️ Restore function not available. Feature coming soon!")
+                # st.success(f"Workspace '{ws['name']}' restored!")
             if st.button(f"Delete {ws['name']}"):
                 st.error(f"Workspace '{ws['name']}' deleted!")
         st.markdown("</div>", unsafe_allow_html=True)
@@ -514,12 +491,8 @@ if ddna_stats.get("status") == "success":
                                 if topic_data.get("status") == "success" and topic_data.get("logs"):
                                     with st.spinner(f"Restoring {topic.replace('_', ' ').title()}..."):
                                         try:
-                                            # Call restore_state if available
-                                            if restore_state:
-                                                restore_state()
-                                                st.success(f"✅ Restored state based on {topic.replace('_', ' ').title()} topic!")
-                                            else:
-                                                st.warning("⚠️ Restore function not available. Feature coming soon!")
+                                            # Restore function disabled - show warning
+                                            st.warning("⚠️ Restore function not available. Feature coming soon!")
                                             
                                             # Alternative: Show what would be restored
                                             logs = topic_data.get("logs", [])
@@ -570,11 +543,7 @@ if ddna_stats.get("status") == "success":
                     logs = topic_data.get("logs", [])
                     with st.spinner(f"Restoring {selected_topic.replace('_', ' ').title()}..."):
                         try:
-                            if restore_state:
-                                restore_state()
-                                st.success(f"✅ Restored state based on {selected_topic.replace('_', ' ').title()} topic!")
-                            else:
-                                st.warning("⚠️ Restore function not available")
+                            st.warning("⚠️ Restore function not available")
                             
                             # Show restoration summary
                             apps = set()
