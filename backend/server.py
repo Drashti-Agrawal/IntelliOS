@@ -13,6 +13,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 from dotenv import load_dotenv
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+# Initialize Firebase
+from firebase_admin import credentials, firestore, initialize_app, get_app, App
+
+# Initialize Firebase safely (avoid re-initialization)
+try:
+    app_ = get_app()
+except ValueError:
+    cred = credentials.Certificate(os.path.join(os.path.dirname(__file__), "FireBase", "serviceAccountKey.json"))
+    app_ = initialize_app(cred)
+
+db = firestore.client(app_)
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'State_capturing_engine')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Restoration_engine')))
@@ -29,11 +43,11 @@ load_dotenv()
 # Add parent directory to path to import IntelliOS modules
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from logging_config import setup_logging
+# from logging_config import setup_logging
 
 # Set up the logger
 logger = logging.getLogger(__name__)
-setup_logging()  # Use environment variable LOG_LEVEL
+# setup_logging()  # Use environment variable LOG_LEVEL
 
 
 # Initialize FastAPI app
@@ -60,6 +74,25 @@ if LAST_CAPTURED is None:
 # Define response models
 
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class LoginResponse(BaseModel):
+    status: str
+    message: str
+    workspaces: Optional[Dict[str, Dict[str, Any]]] = None
+
+class SignupRequest(BaseModel):
+    username: str
+    password: str
+    email: str
+    name: str
+
+class SignupResponse(BaseModel):
+    status: str
+    message: str
+
 class CaptureResponse(BaseModel):
     status: str
     message: str
@@ -74,6 +107,7 @@ class RestoreResponse(BaseModel):
     details: Optional[Dict[str, bool]] = None
 
 class CreateWorkspaceRequest(BaseModel):
+    username: str
     workspace_name: str
     state: Dict[str, Any]
 
@@ -81,11 +115,15 @@ class CreateWorkspaceResponse(BaseModel):
     status: str
     message: str
 
+class GetWorkspacesRequest(BaseModel):
+    username: str
+
 class GetWorkspacesResponse(BaseModel):
     status: str
     workspaces: Dict[str, Dict[str, Any]]
 
 class DeleteWorkspaceRequest(BaseModel):
+    username: str
     workspace_name: str
 
 class DeleteWorkspaceResponse(BaseModel):
@@ -98,34 +136,122 @@ async def read_root():
     """Root endpoint - health check"""
     return {"status": "online", "message": "IntelliOS API is running"}
 
+@app.post("/api/login", response_model=LoginResponse, tags=["Authentication"])
+async def login(request: LoginRequest):
+    """
+    Authenticate user login
+    """
+    try:
+        # Get user document from Firestore
+        doc = db.collection("DDNA").document(request.username).get()
+        
+        if not doc.exists:
+            return LoginResponse(
+                status="error",
+                message="Username not found",
+                workspaces=None
+            )
+            
+        user_data = doc.to_dict()
+        if user_data.get("password") != request.password:
+            return LoginResponse(
+                status="error",
+                message="Incorrect Password",
+                workspaces=None
+            )
+            
+        # Return success with workspaces
+        return LoginResponse(
+            status="success",
+            message="Successful",
+            workspaces=user_data.get("workspaces", {})
+        )
+            
+    except Exception as e:
+        logger.error(f"Login error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Login failed: {str(e)}"
+        )
+
+@app.post("/api/signup", response_model=SignupResponse, tags=["Authentication"])
+async def signup(request: SignupRequest):
+    """
+    Create new user account
+    """
+    try:
+        # Check if username already exists
+        doc = db.collection("DDNA").document(request.username).get()
+        if doc.exists:
+            return SignupResponse(
+                status="error",
+                message="Username already exists"
+            )
+            
+        # Create new user document
+        user_data = {
+            "username": request.username,
+            "password": request.password,
+            "email": request.email,
+            "name": request.name,
+            "workspaces": {}
+        }
+        
+        db.collection("DDNA").document(request.username).set(user_data)
+        
+        return SignupResponse(
+            status="success",
+            message="Account created successfully"
+        )
+            
+    except Exception as e:
+        logger.error(f"Signup error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Signup failed: {str(e)}"
+        )
+
 @app.post("/api/workspace", response_model=CreateWorkspaceResponse, tags=["Workspace Management"])
-async def create_update_workspace(request: dict):
+async def create_update_workspace(request: CreateWorkspaceRequest):
     """
     Create or update a workspace with the given name and state
     
     Args:
-        request: {"workspace_name": str, "state": dict}
+        request: CreateWorkspaceRequest containing username, workspace_name and state
         
     Returns:
         CreateWorkspaceResponse with status and message
     """
     try:
-        # Create Workspaces directory if it doesn't exist
-        workspaces_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..\\State\\Workspaces"))
-        os.makedirs(workspaces_dir, exist_ok=True)
+        # Get user document
+        doc_ref = db.collection("DDNA").document(request.username)
+        doc = doc_ref.get()
         
-        # Create workspace file path
-        workspace_file = os.path.join(workspaces_dir, f"{request.workspace_name}.json")
+        if not doc.exists:
+            raise HTTPException(
+                status_code=404,
+                detail="User not found"
+            )
+            
+        # Get current workspaces
+        user_data = doc.to_dict()
+        workspaces = user_data.get("workspaces", {})
         
-        # Write state to workspace file
-        with open(workspace_file, "w", encoding="utf-8") as f:
-            json.dump(request.state, f, indent=2, ensure_ascii=False)
+        # Add or update workspace
+        workspaces[request.workspace_name] = request.state
+        
+        # Update Firestore document
+        doc_ref.update({
+            "workspaces": workspaces
+        })
             
         return CreateWorkspaceResponse(
             status="success",
             message=f"Workspace '{request.workspace_name}' created/updated successfully"
         )
             
+    except HTTPException as he:
+        raise he
     except Exception as e:
         logger.error(f"Error creating workspace: {e}")
         raise HTTPException(
@@ -133,36 +259,37 @@ async def create_update_workspace(request: dict):
             detail=f"Error creating workspace: {str(e)}"
         )
 
-@app.get("/api/workspaces", response_model=GetWorkspacesResponse, tags=["Workspace Management"])
-async def get_all_workspaces():
+@app.post("/api/workspaces", response_model=GetWorkspacesResponse, tags=["Workspace Management"])
+async def get_all_workspaces(request: GetWorkspacesRequest):
     """
-    Get all workspaces and their states
+    Get all workspaces and their states for a user
     
+    Args:
+        request: GetWorkspacesRequest containing username
+        
     Returns:
         GetWorkspacesResponse containing a dictionary of workspace names and their states
     """
     try:
-        workspaces_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..\\State\\Workspaces"))
-        if not os.path.exists(workspaces_dir):
-            return GetWorkspacesResponse(
-                status="success",
-                workspaces={}
+        # Get user document
+        doc = db.collection("DDNA").document(request.username).get()
+        
+        if not doc.exists:
+            raise HTTPException(
+                status_code=404,
+                detail="User not found"
             )
             
-        workspaces = {}
-        for filename in os.listdir(workspaces_dir):
-            if filename.endswith('.json'):
-                workspace_name = filename[:-5]  # Remove .json extension
-                workspace_file = os.path.join(workspaces_dir, filename)
-                
-                with open(workspace_file, 'r', encoding='utf-8') as f:
-                    workspaces[workspace_name] = json.load(f)
+        user_data = doc.to_dict()
+        workspaces = user_data.get("workspaces", {})
                     
         return GetWorkspacesResponse(
             status="success",
             workspaces=workspaces
         )
             
+    except HTTPException as he:
+        raise he
     except Exception as e:
         logger.error(f"Error getting workspaces: {e}")
         raise HTTPException(
@@ -173,25 +300,43 @@ async def get_all_workspaces():
 @app.delete("/api/workspace", response_model=DeleteWorkspaceResponse, tags=["Workspace Management"])
 async def delete_workspace(request: DeleteWorkspaceRequest):
     """
-    Delete a workspace with the given name
+    Delete a workspace for a user
     
     Args:
-        request: DeleteWorkspaceRequest containing workspace_name
+        request: DeleteWorkspaceRequest containing username and workspace_name
         
     Returns:
         DeleteWorkspaceResponse with status and message
     """
     try:
-        workspaces_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..\\State\\Workspaces"))
-        workspace_file = os.path.join(workspaces_dir, f"{request.workspace_name}.json")
+        # Get user document
+        doc_ref = db.collection("DDNA").document(request.username)
+        doc = doc_ref.get()
         
-        if not os.path.exists(workspace_file):
+        if not doc.exists:
+            raise HTTPException(
+                status_code=404,
+                detail="User not found"
+            )
+            
+        # Get current workspaces
+        user_data = doc.to_dict()
+        workspaces = user_data.get("workspaces", {})
+        
+        # Check if workspace exists
+        if request.workspace_name not in workspaces:
             raise HTTPException(
                 status_code=404,
                 detail=f"Workspace '{request.workspace_name}' not found"
             )
             
-        os.remove(workspace_file)
+        # Delete workspace
+        del workspaces[request.workspace_name]
+        
+        # Update Firestore document
+        doc_ref.update({
+            "workspaces": workspaces
+        })
         
         return DeleteWorkspaceResponse(
             status="success",
