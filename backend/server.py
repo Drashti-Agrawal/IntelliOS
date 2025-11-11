@@ -142,6 +142,10 @@ if not SERVICES_AVAILABLE["vector_db"]:
 # Define paths
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 LOCAL_DDNA_DIR = os.path.join(BACKEND_DIR, 'local_ddna')
+STATE_DIR = os.path.join(project_root, 'State')
+STATE_CAPTURE_DIR = os.path.join(project_root, 'State_capturing_engine')
+DEFAULT_STATE_FILE = os.path.join(STATE_DIR, 'state.json')
+DEFAULT_BROWSER_PORTS_FILE = os.path.join(STATE_CAPTURE_DIR, 'browser_ports.json')
 
 # Note: capture and restore modules imported from packages above (State_capturing_engine, Restoration_engine)
 
@@ -199,10 +203,6 @@ class RestoreResponse(BaseModel):
     status: str
     message: str
     details: Optional[Dict[str, bool]] = None
-
-class CaptureRequest(BaseModel):
-    state_file_path: str
-    browser_ports_file: str
 
 class CaptureResponse(BaseModel):
     status: str
@@ -511,14 +511,11 @@ async def get_vector_db_stats():
         raise HTTPException(status_code=500, detail=f"Error getting vector database stats: {str(e)}")
 
 # State Restoration endpoints
-@app.post("/api/capture", response_model=CaptureResponse, tags=["State Management"])
-async def capture_state(request: CaptureRequest):
+@app.get("/api/capture", response_model=CaptureResponse, tags=["State Management"])
+async def capture_state():
     """
-    Capture current system state and save it to a file
-    
-    Args:
-        request: CaptureRequest containing paths for state.json and browser_ports.json
-        
+    Capture current system state and save it to a file using default paths
+
     Returns:
         CaptureResponse with status and message
     """
@@ -529,19 +526,22 @@ async def capture_state(request: CaptureRequest):
         )
     
     try:
-        # Ensure output directory exists
-        os.makedirs(os.path.dirname(request.state_file_path), exist_ok=True)
+        state_file_path = os.environ.get("CAPTURE_STATE_FILE", DEFAULT_STATE_FILE)
+        browser_ports_file = os.environ.get("BROWSER_PORTS_FILE", DEFAULT_BROWSER_PORTS_FILE)
 
-        if not os.path.exists(request.browser_ports_file):
+        # Ensure output directory exists
+        os.makedirs(os.path.dirname(state_file_path), exist_ok=True)
+
+        if not os.path.exists(browser_ports_file):
             raise HTTPException(
                 status_code=404,
-                detail=f"Browser ports file not found: {request.browser_ports_file}"
+                detail=f"Browser ports file not found: {browser_ports_file}"
             )
         
         # Read browser ports file
         browser_ports_data = {}
         try:
-            with open(request.browser_ports_file, 'r', encoding='utf-8') as f:
+            with open(browser_ports_file, 'r', encoding='utf-8') as f:
                 browser_ports_data = json.load(f)
         except Exception as e:
             logger.error(f"Error reading browser ports file: {e}")
@@ -591,14 +591,14 @@ async def capture_state(request: CaptureRequest):
         }
         
         # Save state to file
-        with open(request.state_file_path, "w", encoding="utf-8") as f:
+        with open(state_file_path, "w", encoding="utf-8") as f:
             json.dump(state, f, indent=2, ensure_ascii=False)
             
         return CaptureResponse(
             status="success",
             message="State captured successfully",
             saved_at=state["saved_at"],
-            file_path=request.state_file_path,
+            file_path=state_file_path,
             state=state
         )
             
