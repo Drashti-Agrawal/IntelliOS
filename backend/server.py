@@ -6,6 +6,7 @@ import os
 import sys
 import logging
 import glob
+import requests
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional, Union
 import json
@@ -1084,6 +1085,80 @@ async def get_local_ddna_stats():
         raise HTTPException(
             status_code=500,
             detail=f"Error getting local DDNA stats: {str(e)}"
+        )
+
+# Sync workspace to remote cloud endpoint
+class SyncWorkspaceRequest(BaseModel):
+    username: str
+    workspace_name: str
+    state: Dict[str, Any]
+
+class SyncWorkspaceResponse(BaseModel):
+    status: str
+    message: str
+    response: Optional[Dict[str, Any]] = None
+
+@app.post("/api/sync-workspace", response_model=SyncWorkspaceResponse, tags=["Workspace Sync"])
+async def sync_workspace_to_cloud(request: SyncWorkspaceRequest):
+    """
+    Sync workspace data to remote cloud DDNA database
+    
+    Args:
+        request: SyncWorkspaceRequest containing username, workspace_name, and state
+        
+    Returns:
+        SyncWorkspaceResponse with status and message
+    """
+    try:
+        remote_api_url = "https://intellios-database.onrender.com/api/workspace"
+        
+        payload = {
+            "username": request.username,
+            "workspace_name": request.workspace_name,
+            "state": request.state
+        }
+        
+        logger.info(f"Syncing workspace '{request.workspace_name}' for user '{request.username}' to cloud")
+        
+        # Make request to remote API with 60 second timeout
+        response = requests.post(remote_api_url, json=payload, timeout=60)
+        
+        if response.status_code == 200 or response.status_code == 201:
+            result = response.json()
+            logger.info(f"Workspace sync successful: {result.get('message', 'Success')}")
+            return SyncWorkspaceResponse(
+                status="success",
+                message=result.get("message", "Workspace synced successfully"),
+                response=result
+            )
+        else:
+            error_msg = f"Remote API returned status {response.status_code}: {response.text}"
+            logger.error(f"Workspace sync failed: {error_msg}")
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=error_msg
+            )
+            
+    except requests.exceptions.Timeout:
+        error_msg = "Request timed out. The remote server might be slow or unavailable."
+        logger.error(f"Workspace sync timeout: {error_msg}")
+        raise HTTPException(
+            status_code=504,
+            detail=error_msg
+        )
+    except requests.exceptions.ConnectionError:
+        error_msg = "Could not connect to remote server. Check your internet connection."
+        logger.error(f"Workspace sync connection error: {error_msg}")
+        raise HTTPException(
+            status_code=503,
+            detail=error_msg
+        )
+    except Exception as e:
+        error_msg = f"Unexpected error: {str(e)}"
+        logger.error(f"Workspace sync error: {error_msg}")
+        raise HTTPException(
+            status_code=500,
+            detail=error_msg
         )
 
 if __name__ == "__main__":

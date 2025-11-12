@@ -315,6 +315,59 @@ except ImportError as e:
     print(f"⚠️ Flow module not available: {e}")
     print(f"   Tried path: {FLOW_DIR}")
 
+# Remote API configuration
+REMOTE_API_BASE_URL = "https://intellios-database.onrender.com"
+
+def sync_workspace_to_remote(username: str, workspace_name: str, state: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Sync workspace data to remote DDNA database
+    
+    Args:
+        username: Username for the workspace
+        workspace_name: Name of the workspace
+        state: State data containing apps, browsers, etc.
+        
+    Returns:
+        Response dict with status and message
+    """
+    try:
+        url = f"{REMOTE_API_BASE_URL}/api/workspace"
+        payload = {
+            "username": username,
+            "workspace_name": workspace_name,
+            "state": state
+        }
+        
+        response = requests.post(url, json=payload, timeout=10)
+        
+        if response.status_code == 200 or response.status_code == 201:
+            result = response.json()
+            return {
+                "status": "success",
+                "message": result.get("message", "Workspace synced successfully"),
+                "response": result
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"API returned status {response.status_code}: {response.text}"
+            }
+    except requests.exceptions.Timeout:
+        return {
+            "status": "error",
+            "message": "Request timed out. The remote server might be slow or unavailable."
+        }
+    except requests.exceptions.ConnectionError:
+        return {
+            "status": "error",
+            "message": "Could not connect to remote server. Check your internet connection."
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Unexpected error: {str(e)}"
+        }
+
 # Load workspaces from JSON file
 WORKSPACES_PATH = os.path.join(os.path.dirname(__file__), "workspaces.json")
 if os.path.exists(WORKSPACES_PATH):
@@ -635,11 +688,49 @@ for ws in workspaces:
                 st.success("Synced")
             else:
                 st.warning("Not Synced")
-            if st.button(f"Restore {ws['name']}"):
-                st.warning("⚠️ Restore function not available. Feature coming soon!")
-                # st.success(f"Workspace '{ws['name']}' restored!")
-            if st.button(f"Delete {ws['name']}"):
-                st.error(f"Workspace '{ws['name']}' deleted!")
+            
+            # Action buttons
+            btn_col1, btn_col2 = st.columns(2)
+            
+            with btn_col1:
+                if st.button(f"🔄 Restore", key=f"restore_{ws['name']}", use_container_width=True):
+                    st.warning("⚠️ Restore function not available. Feature coming soon!")
+                    # st.success(f"Workspace '{ws['name']}' restored!")
+            
+            with btn_col2:
+                if st.button(f"🗑️ Delete", key=f"delete_{ws['name']}", use_container_width=True):
+                    st.error(f"Workspace '{ws['name']}' deleted!")
+            
+            # Sync with DDNA button (full width)
+            if st.button(f"☁️ Sync with DDNA", key=f"sync_{ws['name']}", use_container_width=True, type="primary"):
+                with st.spinner(f"Syncing {ws['name']} to remote DDNA..."):
+                    # Build state object from workspace data
+                    state_data = {
+                        "saved_at": datetime.datetime.now().isoformat(),
+                        "user": username,
+                        "workspace_name": ws['name'],
+                        "apps": ws.get('apps', []),
+                        "files": ws.get('files', 0),
+                        "tabs": ws.get('tabs', 0),
+                        "lastUsed": ws.get('lastUsed', ''),
+                        "synced": ws.get('synced', False)
+                    }
+                    
+                    result = sync_workspace_to_remote(
+                        username=username,
+                        workspace_name=ws['name'],
+                        state=state_data
+                    )
+                    
+                    if result['status'] == 'success':
+                        st.success(f"✅ {result['message']}")
+                        # Update synced status
+                        ws['synced'] = True
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        st.error(f"❌ Sync failed: {result['message']}")
+        
         st.markdown("</div>", unsafe_allow_html=True)
 
 # Quick Actions & Stats
