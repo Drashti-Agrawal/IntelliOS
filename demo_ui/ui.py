@@ -6,6 +6,9 @@ import sys
 import datetime
 import time
 import threading
+from typing import Any, Dict, List, Optional, Tuple
+
+import requests
 from local_ddna_helper import (
     get_local_ddna_topics,
     get_local_ddna_topic,
@@ -20,6 +23,274 @@ PROJECT_ROOT = os.path.dirname(DEMO_UI_DIR)
 BACKEND_DIR = os.path.join(PROJECT_ROOT, 'backend')
 FLOW_DIR = os.path.join(BACKEND_DIR, 'flow')
 RESTORATION_DIR = os.path.join(PROJECT_ROOT, 'Restoration_engine')
+
+API_BASE_URL = os.environ.get("INTELLIOS_API_BASE_URL", "http://127.0.0.1:8000").rstrip('/')
+try:
+    RESTORE_REQUEST_TIMEOUT = float(os.environ.get("INTELLIOS_RESTORE_TIMEOUT", "45"))
+except ValueError:
+    RESTORE_REQUEST_TIMEOUT = 45.0
+
+MAX_TABS_PER_BROWSER = 12
+BROWSER_NAME_ALIASES = {
+    "edge": "msedge",
+    "microsoftedge": "msedge",
+    "microsoft edge": "msedge",
+    "google chrome": "chrome",
+    "firefox": "firefox",
+    "mozilla firefox": "firefox",
+    "brave browser": "brave",
+}
+BROWSER_EXEC_PATHS = {
+    "chrome": [
+        r"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        r"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    ],
+    "msedge": [
+        r"C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+        r"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+    ],
+    "firefox": [
+        r"C:\\Program Files\\Mozilla Firefox\\firefox.exe",
+        r"C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe",
+    ],
+    "brave": [
+        r"C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
+        r"C:\\Program Files (x86)\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
+    ],
+    "opera": [
+        r"C:\\Users\\%USERNAME%\\AppData\\Local\\Programs\\Opera\\opera.exe",
+    ],
+}
+BROWSER_KEYS = {"chrome", "msedge", "firefox", "brave", "opera"}
+
+
+def _expand_env_path(path: Optional[str]) -> Optional[str]:
+    if not path:
+        return None
+    return os.path.expanduser(os.path.expandvars(path))
+
+
+def _default_browser_profile(browser: str) -> str:
+    home_dir = os.path.expanduser("~")
+    local_app = os.environ.get("LOCALAPPDATA") or os.path.join(home_dir, "AppData", "Local")
+    roaming_app = os.environ.get("APPDATA") or os.path.join(home_dir, "AppData", "Roaming")
+    defaults = {
+        "chrome": os.path.join(local_app, "Google", "Chrome", "User Data"),
+        "msedge": os.path.join(local_app, "Microsoft", "Edge", "User Data"),
+        "firefox": os.path.join(roaming_app, "Mozilla", "Firefox", "Profiles"),
+        "brave": os.path.join(local_app, "BraveSoftware", "Brave-Browser", "User Data"),
+        "opera": os.path.join(roaming_app, "Opera Software", "Opera Stable"),
+    }
+    return _expand_env_path(defaults.get(browser, os.path.join(local_app, browser))) or os.path.join(local_app, browser)
+
+
+def _default_browser_exe(browser: str, hint: Optional[str]) -> Optional[str]:
+    expanded_hint = _expand_env_path(hint)
+    if expanded_hint:
+        return expanded_hint
+    candidates = BROWSER_EXEC_PATHS.get(browser, [])
+    for candidate in candidates:
+        expanded = _expand_env_path(candidate)
+        if expanded and os.path.exists(expanded):
+            return expanded
+    if candidates:
+        return _expand_env_path(candidates[0])
+    return None
+
+
+def _normalize_browser_name(name: Optional[str]) -> Optional[str]:
+    if not name:
+        return None
+    candidate = name.strip().lower()
+    if candidate.endswith('.exe'):
+        candidate = candidate[:-4]
+    candidate = BROWSER_NAME_ALIASES.get(candidate, candidate)
+    return candidate if candidate in BROWSER_KEYS else None
+
+
+def build_restore_payload_from_logs(logs: List[Dict[str, Any]]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    apps_by_name: Dict[str, Dict[str, Any]] = {}
+    browser_tabs: Dict[str, List[Dict[str, str]]] = {}
+    browser_urls: Dict[str, set] = {}
+    browser_exe_hint: Dict[str, str] = {}
+    unique_urls = set()
+
+    for log in logs:
+        if not isinstance(log, dict):
+            continue
+        event_type = str(log.get('event_type') or '').lower()
+        app_name = log.get('app_name')
+        browser_candidate = _normalize_browser_name(log.get('browser_name')) or _normalize_browser_name(app_name)
+
+        if event_type.startswith('app'):
+            if browser_candidate:
+                exe_hint = log.get('exe_path')
+                if exe_hint:
+                    browser_exe_hint.setdefault(browser_candidate, exe_hint)
+                continue
+            if not app_name:
+                continue
+            key = app_name.strip()
+            entry = apps_by_name.setdefault(key, {
+                'name': key,
+                'exe': log.get('exe_path'),
+                'items': [],
+            })
+            if not entry.get('exe') and log.get('exe_path'):
+                entry['exe'] = log.get('exe_path')
+
+        if 'browser' in event_type and 'tab' in event_type:
+            if not browser_candidate:
+                continue
+            url = log.get('url')
+            if not url:
+                continue
+            if not url.startswith(("http://", "https://", "file://", "chrome://", "edge://")):
+                continue
+            tabs_list = browser_tabs.setdefault(browser_candidate, [])
+            urls_seen = browser_urls.setdefault(browser_candidate, set())
+            if url in urls_seen or len(tabs_list) >= MAX_TABS_PER_BROWSER:
+                continue
+            title = log.get('title') or log.get('summary') or url
+            tabs_list.append({'url': url, 'title': title})
+            urls_seen.add(url)
+            unique_urls.add(url)
+            exe_hint = log.get('exe_path')
+            if exe_hint:
+                browser_exe_hint.setdefault(browser_candidate, exe_hint)
+
+    apps = list(apps_by_name.values())
+    browsers = []
+    total_tabs = 0
+
+    for idx, (browser, tabs) in enumerate(browser_tabs.items()):
+        if not tabs:
+            continue
+        exe_hint = browser_exe_hint.get(browser)
+        browsers.append({
+            'browser': browser,
+            'exe': _default_browser_exe(browser, exe_hint),
+            'windows': [{
+                'profile': _default_browser_profile(browser),
+                'debuggingPort': 9333 + idx,
+                'tabs': tabs,
+            }],
+        })
+        total_tabs += len(tabs)
+
+    summary = {
+        'app_count': len(apps),
+        'browser_count': len(browsers),
+        'tab_count': total_tabs,
+        'url_count': len(unique_urls),
+        'app_names': sorted(apps_by_name.keys()),
+        'browser_names': [entry['browser'] for entry in browsers],
+    }
+
+    payload = {
+        'apps': apps,
+        'browsers': browsers,
+    }
+
+    return payload, summary
+
+
+def _extract_error_message(response: Optional[requests.Response]) -> str:
+    if response is None:
+        return "Unknown error"
+    try:
+        data = response.json()
+    except ValueError:
+        return response.text.strip() or "Unknown error"
+    if isinstance(data, dict):
+        return str(data.get('detail') or data.get('message') or response.text or "Unknown error")
+    return response.text.strip() or "Unknown error"
+
+
+def perform_restore_request(topic_label: str, payload: Dict[str, Any], summary: Dict[str, Any]) -> None:
+    dry_run = st.session_state.get('restore_dry_run', True)
+    request_body = {
+        'apps': payload.get('apps', []),
+        'browsers': payload.get('browsers', []),
+        'dry_run': dry_run,
+    }
+
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/api/restore",
+            json=request_body,
+            timeout=RESTORE_REQUEST_TIMEOUT,
+        )
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as exc:
+        error_message = _extract_error_message(exc.response)
+        st.error(f"❌ Restore failed for {topic_label}: {error_message}")
+        return
+    except requests.exceptions.RequestException as exc:
+        st.error(f"❌ Restore request error for {topic_label}: {exc}")
+        return
+
+    try:
+        data = response.json()
+    except ValueError:
+        st.error("⚠️ Restore response was not valid JSON.")
+        return
+
+    summary_lines = []
+    if summary.get('app_count'):
+        summary_lines.append(f"- {summary['app_count']} apps")
+    if summary.get('tab_count'):
+        summary_lines.append(
+            f"- {summary['tab_count']} browser tabs across {summary.get('browser_count', 0)} browsers"
+        )
+    if summary_lines:
+        st.info("📋 Prepared restore payload:\n" + "\n".join(summary_lines))
+
+    if summary.get('app_names'):
+        preview_apps = ", ".join(summary['app_names'][:5])
+        suffix = "…" if summary['app_count'] > 5 else ""
+        st.caption(f"Apps: {preview_apps}{suffix}")
+    if summary.get('browser_names'):
+        st.caption("Browsers: " + ", ".join(summary['browser_names']))
+
+    status = str(data.get('status', '')).lower()
+    message = data.get('message', 'No message returned')
+
+    if status == 'success':
+        st.success(f"✅ Restore completed: {message}")
+    elif status == 'dry_run':
+        st.info(f"🧪 Dry run: {message}")
+        missing = data.get('details', {}).get('missing_browser_executables', [])
+        if missing:
+            missing_lines = [
+                f"- {item.get('browser')} (hint: {item.get('requested_exe') or 'unknown'})"
+                for item in missing
+            ]
+            st.warning("⚠️ Missing browser executables:\n" + "\n".join(missing_lines))
+    else:
+        st.warning(f"ℹ️ Restore response: {message}")
+
+
+def trigger_topic_restore(topic: str, logs: Optional[List[Dict[str, Any]]] = None, limit: int = 100) -> None:
+    topic_label = topic.replace('_', ' ').title()
+    if logs is None:
+        topic_data = get_local_ddna_topic(topic, limit=limit)
+        if topic_data.get('status') != 'success':
+            message = topic_data.get('message', 'Unknown error')
+            st.warning(f"⚠️ Unable to load data for {topic_label}: {message}")
+            return
+        logs = topic_data.get('logs', [])
+
+    if not logs:
+        st.warning(f"⚠️ No data available for {topic_label}")
+        return
+
+    payload, summary = build_restore_payload_from_logs(logs)
+    if not payload.get('apps') and not payload.get('browsers'):
+        st.warning(f"⚠️ No restorable items found for {topic_label}")
+        return
+
+    perform_restore_request(topic_label, payload, summary)
 
 # Flow pipeline and workspace metadata functionality
 if RESTORATION_DIR not in sys.path and os.path.exists(RESTORATION_DIR):
@@ -69,6 +340,8 @@ if 'recent_captures' not in st.session_state:
     st.session_state.recent_captures = []
 if 'last_capture_result' not in st.session_state:
     st.session_state.last_capture_result = None
+if 'restore_dry_run' not in st.session_state:
+    st.session_state.restore_dry_run = True
 
 def run_continuous_capture(delay=5):
     """Run capture continuously in background"""
@@ -388,6 +661,14 @@ st.markdown("---")
 # Local DDNA Section
 st.subheader("🧬 Local DDNA Activity Monitoring")
 
+dry_run_mode = st.checkbox(
+    "Dry-run restore (preview only)",
+    value=st.session_state.get('restore_dry_run', True),
+    key="restore_dry_run",
+)
+if dry_run_mode:
+    st.caption("Restore requests will run in dry-run mode and report missing executables.")
+
 # Get DDNA stats
 ddna_stats = get_local_ddna_stats()
 
@@ -485,32 +766,8 @@ if ddna_stats.get("status") == "success":
                         
                         with btn_col2:
                             if st.button(f"🔄 Restore", key=f"restore_{topic}", use_container_width=True, type="primary"):
-                                # Get topic data for restoration
-                                topic_data = get_local_ddna_topic(topic, limit=50)
-                                
-                                if topic_data.get("status") == "success" and topic_data.get("logs"):
-                                    with st.spinner(f"Restoring {topic.replace('_', ' ').title()}..."):
-                                        try:
-                                            # Restore function disabled - show warning
-                                            st.warning("⚠️ Restore function not available. Feature coming soon!")
-                                            
-                                            # Alternative: Show what would be restored
-                                            logs = topic_data.get("logs", [])
-                                            apps = set()
-                                            urls = set()
-                                            
-                                            for log in logs[:10]:  # Analyze top 10 logs
-                                                if log.get('app_name'):
-                                                    apps.add(log.get('app_name'))
-                                                if log.get('url'):
-                                                    urls.add(log.get('url'))
-                                            
-                                            if apps or urls:
-                                                st.info(f"📋 Topic contains:\n- {len(apps)} unique apps\n- {len(urls)} unique URLs")
-                                        except Exception as e:
-                                            st.error(f"❌ Restore failed: {str(e)}")
-                                else:
-                                    st.warning(f"⚠️ No data available for {topic.replace('_', ' ').title()}")
+                                with st.spinner(f"Restoring {topic.replace('_', ' ').title()}..."):
+                                    trigger_topic_restore(topic, limit=150)
     
     # Display selected topic details
     if 'selected_topic' in st.session_state:
@@ -540,24 +797,8 @@ if ddna_stats.get("status") == "success":
             
             with action_col2:
                 if st.button("🔄 Restore Topic", key=f"restore_detail_{selected_topic}", type="primary", use_container_width=True):
-                    logs = topic_data.get("logs", [])
                     with st.spinner(f"Restoring {selected_topic.replace('_', ' ').title()}..."):
-                        try:
-                            st.warning("⚠️ Restore function not available")
-                            
-                            # Show restoration summary
-                            apps = set()
-                            urls = set()
-                            for log in logs[:20]:
-                                if log.get('app_name'):
-                                    apps.add(log.get('app_name'))
-                                if log.get('url'):
-                                    urls.add(log.get('url'))
-                            
-                            if apps or urls:
-                                st.info(f"📋 Restoring:\n- {len(apps)} apps\n- {len(urls)} URLs")
-                        except Exception as e:
-                            st.error(f"❌ Error: {str(e)}")
+                        trigger_topic_restore(selected_topic, limit=200)
             
             with action_col3:
                 if st.button("❌ Close", key=f"close_{selected_topic}", use_container_width=True):

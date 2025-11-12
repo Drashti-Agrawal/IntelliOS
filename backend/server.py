@@ -28,7 +28,7 @@ except ImportError as e:
     STATE_CAPTURE_AVAILABLE = False
     
 try:
-    from Restoration_engine.browser_restore import restore_browsers
+    from Restoration_engine.browser_restore import restore_browsers, resolve_browser_executable
     from Restoration_engine.app_restore import restore_apps
     RESTORATION_AVAILABLE = True
 except ImportError as e:
@@ -36,6 +36,9 @@ except ImportError as e:
     logger.info("Restoration_engine modules not available - restoration functionality disabled")
     logger.debug(f"Restoration import error: {e}")
     RESTORATION_AVAILABLE = False
+
+    def resolve_browser_executable(browser: str, exe_hint: Optional[str] = None) -> Optional[str]:
+        return exe_hint
 
 # Load environment variables
 load_dotenv()
@@ -142,10 +145,6 @@ if not SERVICES_AVAILABLE["vector_db"]:
 # Define paths
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 LOCAL_DDNA_DIR = os.path.join(BACKEND_DIR, 'local_ddna')
-STATE_DIR = os.path.join(project_root, 'State')
-STATE_CAPTURE_DIR = os.path.join(project_root, 'State_capturing_engine')
-DEFAULT_STATE_FILE = os.path.join(STATE_DIR, 'state.json')
-DEFAULT_BROWSER_PORTS_FILE = os.path.join(STATE_CAPTURE_DIR, 'browser_ports.json')
 
 # Note: capture and restore modules imported from packages above (State_capturing_engine, Restoration_engine)
 
@@ -197,12 +196,21 @@ class TopicListResponse(BaseModel):
 
 # State restoration models
 class RestoreRequest(BaseModel):
-    state_file_path: str
+    state_file_path: Optional[str] = None
+    browsers: Optional[List[Dict[str, Any]]] = None
+    apps: Optional[List[Dict[str, Any]]] = None
+    dry_run: bool = False
 
 class RestoreResponse(BaseModel):
     status: str
     message: str
     details: Optional[Dict[str, bool]] = None
+
+
+class RestorePreviewResponse(BaseModel):
+    status: str
+    apps: List[Dict[str, Any]]
+    browsers: List[Dict[str, Any]]
 
 class CaptureResponse(BaseModel):
     status: str
@@ -210,6 +218,11 @@ class CaptureResponse(BaseModel):
     saved_at: str
     file_path: str
     state: Optional[Dict[str, Any]] = None
+
+
+class CaptureRequest(BaseModel):
+    state_file_path: str
+    browser_ports_file: str
     
 # Local DDNA models
 class LocalDDNATopicsResponse(BaseModel):
@@ -511,10 +524,10 @@ async def get_vector_db_stats():
         raise HTTPException(status_code=500, detail=f"Error getting vector database stats: {str(e)}")
 
 # State Restoration endpoints
-@app.get("/api/capture", response_model=CaptureResponse, tags=["State Management"])
-async def capture_state():
+@app.post("/api/capture", response_model=CaptureResponse, tags=["State Management"])
+async def capture_state(request: CaptureRequest):
     """
-    Capture current system state and save it to a file using default paths
+    Capture current system state and save it to a file
 
     Returns:
         CaptureResponse with status and message
@@ -526,22 +539,19 @@ async def capture_state():
         )
     
     try:
-        state_file_path = os.environ.get("CAPTURE_STATE_FILE", DEFAULT_STATE_FILE)
-        browser_ports_file = os.environ.get("BROWSER_PORTS_FILE", DEFAULT_BROWSER_PORTS_FILE)
-
         # Ensure output directory exists
-        os.makedirs(os.path.dirname(state_file_path), exist_ok=True)
+        os.makedirs(os.path.dirname(request.state_file_path), exist_ok=True)
 
-        if not os.path.exists(browser_ports_file):
+        if not os.path.exists(request.browser_ports_file):
             raise HTTPException(
                 status_code=404,
-                detail=f"Browser ports file not found: {browser_ports_file}"
+                detail=f"Browser ports file not found: {request.browser_ports_file}"
             )
         
         # Read browser ports file
         browser_ports_data = {}
         try:
-            with open(browser_ports_file, 'r', encoding='utf-8') as f:
+            with open(request.browser_ports_file, 'r', encoding='utf-8') as f:
                 browser_ports_data = json.load(f)
         except Exception as e:
             logger.error(f"Error reading browser ports file: {e}")
@@ -591,14 +601,14 @@ async def capture_state():
         }
         
         # Save state to file
-        with open(state_file_path, "w", encoding="utf-8") as f:
+        with open(request.state_file_path, "w", encoding="utf-8") as f:
             json.dump(state, f, indent=2, ensure_ascii=False)
             
         return CaptureResponse(
             status="success",
             message="State captured successfully",
             saved_at=state["saved_at"],
-            file_path=state_file_path,
+            file_path=request.state_file_path,
             state=state
         )
             
@@ -630,28 +640,61 @@ async def restore_state(request: RestoreRequest):
         )
         
     try:
-        if not os.path.exists(request.state_file_path):
-            raise HTTPException(
-                status_code=404,
-                detail=f"State file not found: {request.state_file_path}"
-            )
+        state: Dict[str, Any] = {}
+        if request.apps is not None or request.browsers is not None:
+            state = {
+                'apps': request.apps or [],
+                'browsers': request.browsers or [],
+            }
+        else:
+            if not request.state_file_path:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Either state_file_path or inlined apps/browsers must be provided"
+                )
 
-        # Read state file
-        state = {}
-        try:
-            with open(request.state_file_path, 'r', encoding='utf-8') as f:
-                state = json.load(f)
-        except Exception as e:
-            logger.error(f"Error reading state file: {e}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error reading state file: {str(e)}"
-            )
+            if not os.path.exists(request.state_file_path):
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"State file not found: {request.state_file_path}"
+                )
+
+            # Read state file
+            try:
+                with open(request.state_file_path, 'r', encoding='utf-8') as f:
+                    state = json.load(f)
+            except Exception as e:
+                logger.error(f"Error reading state file: {e}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Error reading state file: {str(e)}"
+                )
 
         restoration_details = {
             "browsers_restored": False,
             "apps_restored": False
         }
+
+        if request.dry_run:
+            missing_executables = []
+            for browser in state.get('browsers', []):
+                resolved = resolve_browser_executable(browser.get('browser', ''), browser.get('exe'))
+                if not resolved or not os.path.exists(resolved):
+                    missing_executables.append({
+                        'browser': browser.get('browser'),
+                        'requested_exe': browser.get('exe'),
+                        'resolved_exe': resolved,
+                    })
+
+            return RestoreResponse(
+                status="dry_run",
+                message="Restore dry-run completed",
+                details={
+                    'browsers_restored': False,
+                    'apps_restored': False,
+                    'missing_browser_executables': missing_executables,
+                }
+            )
 
         # Restore browsers
         try:
@@ -685,6 +728,63 @@ async def restore_state(request: RestoreRequest):
         raise he
     except Exception as e:
         logger.error(f"Unexpected error in restore_state: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected error: {str(e)}"
+        )
+
+
+@app.post("/api/restore/preview", response_model=RestorePreviewResponse, tags=["State Management"])
+async def preview_restore(request: RestoreRequest):
+    if not RESTORATION_AVAILABLE:
+        raise HTTPException(
+            status_code=501,
+            detail="State restoration functionality not available"
+        )
+
+    try:
+        state: Dict[str, Any] = {}
+        if request.apps is not None or request.browsers is not None:
+            state = {
+                'apps': request.apps or [],
+                'browsers': request.browsers or [],
+            }
+        else:
+            if not request.state_file_path:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Either state_file_path or inlined apps/browsers must be provided"
+                )
+
+            if not os.path.exists(request.state_file_path):
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"State file not found: {request.state_file_path}"
+                )
+
+            with open(request.state_file_path, 'r', encoding='utf-8') as f:
+                state = json.load(f)
+
+        browsers_preview: List[Dict[str, Any]] = []
+        for browser in state.get('browsers', []):
+            resolved = resolve_browser_executable(browser.get('browser', ''), browser.get('exe'))
+            browsers_preview.append({
+                'browser': browser.get('browser'),
+                'requested_exe': browser.get('exe'),
+                'resolved_exe': resolved,
+                'windows': browser.get('windows', []),
+            })
+
+        return RestorePreviewResponse(
+            status='success',
+            apps=state.get('apps', []),
+            browsers=browsers_preview,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in preview_restore: {e}")
         raise HTTPException(
             status_code=500,
             detail=f"Unexpected error: {str(e)}"

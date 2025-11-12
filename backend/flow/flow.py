@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import sys
+from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 from dotenv import load_dotenv
 
@@ -115,6 +116,90 @@ def _append_log_to_topic(topic: str, log: dict) -> None:
         logger.info("Added streamlined log to topic file %s", topic)
     except Exception as exc:
         logger.error("Failed to append to topic file %s: %s", fname, exc)
+
+
+def _normalize_browser_ports(raw_data: Optional[dict]) -> Dict[str, dict]:
+    """Normalize browser ports metadata into the structure expected by capture_browser_states."""
+    if not isinstance(raw_data, dict):
+        return {}
+
+    browsers_section = raw_data.get('browsers') if 'browsers' in raw_data else raw_data
+    if not isinstance(browsers_section, dict):
+        return {}
+
+    normalized: Dict[str, dict] = {}
+
+    for key, entry in browsers_section.items():
+        if not isinstance(entry, dict):
+            continue
+
+        browser_name = entry.get('browser') or key.split('_', 1)[0]
+        exe_path = entry.get('exe') or entry.get('exe_path')
+        profiles: List[dict] = []
+
+        raw_profiles = entry.get('profiles')
+
+        # Helper to produce a normalized profile dict
+        def _build_profile(name_hint: str, payload: Optional[dict]) -> Optional[dict]:
+            payload = payload or {}
+            if not isinstance(payload, dict):
+                payload = {}
+
+            profile_name = payload.get('profile') or payload.get('user_data_dir') or name_hint or 'Default'
+            user_dir = payload.get('user_data_dir') or profile_name
+
+            instances = payload.get('instances')
+            if isinstance(instances, dict):
+                instances = [{**data, 'port': str(port)} for port, data in instances.items() if isinstance(data, dict)]
+            elif isinstance(instances, list):
+                instances = [inst for inst in instances if isinstance(inst, dict)]
+            else:
+                instances = []
+
+            ports = payload.get('ports')
+            if isinstance(ports, list):
+                instances.extend({'port': str(port), 'status': payload.get('status', 'active')} for port in ports)
+
+            if not instances and isinstance(entry.get('ports'), list):
+                instances.extend({'port': str(port), 'status': 'active'} for port in entry['ports'])
+
+            if not instances:
+                return None
+
+            return {
+                'profile': profile_name,
+                'user_data_dir': user_dir,
+                'instances': instances
+            }
+
+        if isinstance(raw_profiles, dict):
+            for prof_name, prof_payload in raw_profiles.items():
+                normalized_profile = _build_profile(prof_name, prof_payload if isinstance(prof_payload, dict) else None)
+                if normalized_profile:
+                    profiles.append(normalized_profile)
+        elif isinstance(raw_profiles, list):
+            for idx, prof_payload in enumerate(raw_profiles):
+                if isinstance(prof_payload, dict):
+                    name_hint = prof_payload.get('profile') or prof_payload.get('user_data_dir') or f'Profile_{idx}'
+                    normalized_profile = _build_profile(name_hint, prof_payload)
+                elif isinstance(prof_payload, str):
+                    normalized_profile = _build_profile(prof_payload, {'profile': prof_payload})
+                else:
+                    normalized_profile = None
+                if normalized_profile:
+                    profiles.append(normalized_profile)
+        else:
+            normalized_profile = _build_profile(key, {'ports': entry.get('ports')})
+            if normalized_profile:
+                profiles.append(normalized_profile)
+
+        if profiles:
+            normalized[browser_name] = {
+                'exe': exe_path,
+                'profiles': profiles,
+            }
+
+    return normalized
 
 
 def _get_log_topics(log: dict) -> List[str]:
@@ -311,7 +396,10 @@ def handle_latest_logs(
             browser_ports_data = {}
             if os.path.exists(browser_ports_file):
                 with open(browser_ports_file, 'r', encoding='utf-8') as f:
-                    browser_ports_data = json.load(f)
+                    raw_ports = json.load(f)
+                browser_ports_data = _normalize_browser_ports(raw_ports)
+                if not browser_ports_data and isinstance(raw_ports, dict):
+                    browser_ports_data = raw_ports
             
             # Capture browser and app states
             browsers = capture_browser_states(browser_ports_data)
@@ -332,7 +420,7 @@ def handle_latest_logs(
             
             # Create state object
             state = {
-                "saved_at": json.dumps({}),  # Placeholder for timestamp
+                "saved_at": datetime.utcnow().isoformat(),
                 "user": os.environ.get("USERNAME", ""),
                 "browsers": browsers,
                 "apps": apps

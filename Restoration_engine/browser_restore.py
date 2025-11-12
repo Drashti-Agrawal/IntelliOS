@@ -7,16 +7,100 @@ import sys
 import psutil
 import shutil
 from datetime import datetime
+try:
+    import win32com.client  # type: ignore
+except ImportError:  # pragma: no cover - optional convenience dependency
+    win32com = None
 
 # Directory to store profile copies
 PROFILE_COPIES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "profile_copies")
 
 # Default browser paths
 EXE_PATHS = {
-    "chrome": "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-    "msedge": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-    "opera": "C:\\Users\\jaypa\\AppData\\Local\\Programs\\Opera\\opera.exe"
+    "chrome": [
+        "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    ],
+    "msedge": [
+        "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+        "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+    ],
+    "opera": [
+        "C:\\Users\\jaypa\\AppData\\Local\\Programs\\Opera\\opera.exe",
+        "C:\\Users\\%USERNAME%\\AppData\\Local\\Programs\\Opera\\opera.exe",
+    ],
+    "brave": [
+        "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
+        "C:\\Program Files (x86)\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
+    ],
+    "firefox": [
+        "C:\\Program Files\\Mozilla Firefox\\firefox.exe",
+        "C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe",
+    ],
 }
+
+SHORTCUT_DIRS = [
+    os.path.join(os.environ.get("PROGRAMDATA", r"C:\\ProgramData"),
+                 "Microsoft", "Windows", "Start Menu", "Programs"),
+    os.path.join(os.environ.get("APPDATA", r"C:\\Users\\%USERNAME%\\AppData\\Roaming"),
+                 "Microsoft", "Windows", "Start Menu", "Programs"),
+]
+
+SHORTCUT_NAMES = {
+    "chrome": ["Google Chrome.lnk"],
+    "msedge": ["Microsoft Edge.lnk"],
+    "firefox": ["Mozilla Firefox.lnk"],
+    "opera": ["Opera.lnk"],
+    "brave": ["Brave.lnk", "Brave Browser.lnk"],
+}
+
+
+def _expand_path(path):
+    return os.path.expandvars(os.path.expanduser(path)) if path else path
+
+
+def resolve_browser_executable(browser, exe_hint=None):
+    """Resolve an executable path for a browser using captured hints, defaults, or shortcuts."""
+    candidates = []
+
+    if exe_hint:
+        candidates.append(_expand_path(exe_hint))
+
+    for path in EXE_PATHS.get(browser.lower(), []):
+        candidates.append(_expand_path(path))
+
+    for candidate in candidates:
+        if candidate and os.path.exists(candidate):
+            return candidate
+
+    # attempt to resolve from Start Menu shortcuts
+    shortcut_names = SHORTCUT_NAMES.get(browser.lower(), [])
+    if shortcut_names and win32com:
+        try:
+            shell = win32com.client.Dispatch("WScript.Shell")  # type: ignore[attr-defined]
+            for directory in SHORTCUT_DIRS:
+                if not directory:
+                    continue
+                for shortcut_name in shortcut_names:
+                    shortcut_path = os.path.join(directory, shortcut_name)
+                    if os.path.exists(shortcut_path):
+                        try:
+                            target = shell.CreateShortcut(shortcut_path).Targetpath
+                        except Exception:
+                            target = None
+                        if target and os.path.exists(target):
+                            return target
+        except Exception:
+            pass
+
+    # fallback: try to locate via PATH
+    if exe_hint:
+        which_resolved = shutil.which(os.path.basename(exe_hint))
+        if which_resolved:
+            return which_resolved
+
+    # last resort: return hint even if missing
+    return exe_hint
 
 def is_port_in_use(port):
     """Check if a port is already in use."""
@@ -123,10 +207,14 @@ def create_profile_copy(original_profile):
             return new_profile_path
         return None
 
-def restore_browser(browser, windows, exe):
+def restore_browser(browser, windows, exe_hint):
     """Restore browser windows and their tabs"""
-    print(exe)
     if not windows or len(windows) == 0:
+        return
+
+    exe = resolve_browser_executable(browser, exe_hint)
+    if not exe or not os.path.exists(exe):
+        print(f"Error: Unable to resolve executable for {browser}", file=sys.stderr)
         return
 
     # Open each window as a separate browser window and pass URLs
@@ -184,12 +272,5 @@ def restore_browser(browser, windows, exe):
 def restore_browsers(state):
     """Main function to restore all browsers from state"""
     for browser in state.get('browsers', []):
-        exe = browser.get('exe')
-        if exe in [None, ""]:
-            if not browser.get('browser') in EXE_PATHS.keys():
-                print("Can't find the executable path for ", browser.get('browser'))
-                continue
-            else:
-                exe = EXE_PATHS.get(browser.get('browser'))
-        
-        restore_browser(browser.get('browser'), browser.get('windows', []), exe)
+        exe_hint = browser.get('exe')
+        restore_browser(browser.get('browser'), browser.get('windows', []), exe_hint)
